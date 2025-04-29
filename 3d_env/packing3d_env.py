@@ -9,15 +9,26 @@ from matplotlib.widgets import Button
 
 class Item:
     def __init__(self, dx: float, dy: float, dz: float, id=None):
+        if id < 0:
+            raise ValueError("Item id cannot be negative")
         self.id = id
         self.dx = dx
         self.dy = dy
         self.dz = dz
         self.volume = dx * dy * dz
+        self.is_red_space = False
 
+        self.x = None
+        self.y = None
+        self.z = None
         self.com_x = None   
         self.com_y = None
         self.com_z = None
+
+    def set_position(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
 
     def set_com(self, com_x, com_y, com_z):
         self.com_x = com_x
@@ -25,11 +36,26 @@ class Item:
         self.com_z = com_z
 
     def get_com_top(self):
+        if self.com_z is None or self.z is None:
+            return None
         return self.com_x, self.com_y, self.z + self.dz
     
     def get_com_bottom(self):
+        if self.com_z is None or self.z is None:
+            return None
         return self.com_x, self.com_y, self.z
     
+    def __str__(self):
+        if self.x is None or self.y is None or self.z is None:
+            return f"Item {self.id}: {self.dx}x{self.dy}x{self.dz}"
+        else:
+            return f"Item {self.id}: {self.dx}x{self.dy}x{self.dz} at ({self.x}, {self.y}, {self.z})"
+    
+class RedSpace(Item):
+    def __init__(self, dx: float, dy: float, dz=0.5, id=-1):
+        super().__init__(dx, dy, dz, id)
+        self.is_red_space = True
+
 class Action:
     """
     Action space:
@@ -111,6 +137,10 @@ class Packing3DEnv(gym.Env):
         if not fits:
             print(f"Item {item.id if item.id is not None else item_idx} does not fit with current orientation at position ({x}, {y}, {z})")
             return self.grid.copy(), -1, False, False, {"error": "Item doesn't fit"}
+        
+        legal, message = self.placed_legally(item=item, action=action)
+        if not legal:
+            return self.grid.copy(), -1, False, False, {"error": message}
 
         region = self.grid[x:x+dx, y:y+dy, z:z+dz]
         if np.any(region):
@@ -120,6 +150,9 @@ class Packing3DEnv(gym.Env):
         # Store the item ID (using the actual item_idx + 1) in the item_grid
         self.item_grid[x:x+dx, y:y+dy, z:z+dz] = item_idx + 1
         
+        # Calculate and set the position of the item
+        item.set_position(x, y, z)
+
         # Calculate and set the center of mass for the item
         com_x = x + dx / 2
         com_y = y + dy / 2
@@ -132,6 +165,41 @@ class Packing3DEnv(gym.Env):
         done = len(self.available_items) == 0
         reward = item.volume  # volume of item placed
         return self.grid.copy(), reward, done, False, {"placed_item": item_idx}
+    
+    def placed_legally(self, item, action):
+        message = ""
+
+        # Get item position and dimensions
+        x, y, z = action.x, action.y, action.z
+        dx, dy, dz = item.dx, item.dy, item.dz
+        
+        # Check if item is on bottom plane (z=0)
+        if z == 0:
+            message = "Item is on bottom plane"
+            return True, message
+            
+        # Check if there's an item directly below the center
+        center_x = x + dx/2
+        center_y = y + dy/2
+        # Round to nearest integer since we're checking grid positions
+        center_x_int = int(center_x)
+        center_y_int = int(center_y)
+        
+        # Check the grid position directly below the center
+        if z > 0 and self.grid[center_x_int, center_y_int, z-1] == 1:
+            message = "Item is on top of another (unrestricted) item"
+            message = "Item cannot be placed on top of a red space"
+            if True: # TODO: Check if the supporting voxel is part of an item that can't have this item placed on it
+                # message = "Item is on top of another (unrestricted) item"
+                # message = "Item cannot be placed on top of a red space"
+                pass # TODO: return an additional message about the item's incorrect placement
+            message = "Item is on top of another (unrestricted) item"
+            return True, message
+        
+        message = "Item center of mass cannot be floating"
+        return False, message
+            
+        
 
     def text_render(self):
         print(f"Current packed volume: {np.sum(self.grid)}")
@@ -211,8 +279,12 @@ class Packing3DEnv(gym.Env):
             dy = max_y - min_y + 1
             dz = max_z - min_z + 1
             
+            # Get the actual item object
+            item_idx = item_id - 1  # Convert from 1-indexed to 0-indexed
+            item = self.items[item_idx]
+            
             # Draw the item as a cuboid
-            color_idx = (item_id - 1) % len(colors)  # -1 because item_ids are 1-indexed
+            color_idx = item_idx % len(colors)
             self._draw_cuboid(ax, min_x, min_y, min_z, dx, dy, dz, colors[color_idx])
             
             # Draw orientation arrows from the origin point
@@ -232,6 +304,25 @@ class Packing3DEnv(gym.Env):
             if dz > 0:
                 ax.quiver(min_x, min_y, min_z, 0, 0, arrow_length, color='blue', 
                          arrow_length_ratio=0.2, linewidth=2)
+            
+            # Draw center of mass point if available
+            if item.com_x is not None and item.com_y is not None and item.com_z is not None:
+                ax.scatter(item.com_x, item.com_y, item.com_z, color='black', s=50, marker='o', label='COM')
+                
+                # Draw top COM point
+                top_com = item.get_com_top()
+                if top_com is not None:
+                    ax.scatter(top_com[0], top_com[1], top_com[2], color='red', s=30, marker='^', label='Top')
+                
+                # Draw bottom COM point
+                bottom_com = item.get_com_bottom()
+                if bottom_com is not None:
+                    ax.scatter(bottom_com[0], bottom_com[1], bottom_com[2], color='blue', s=30, marker='v', label='Bottom')
+        
+        # Add a legend (only once)
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), loc='upper right')
         
         if show:
             plt.tight_layout()
@@ -411,4 +502,45 @@ class Packing3DEnv(gym.Env):
         plt.tight_layout()
         plt.show()
         
-        return fig, ax
+        return fig, ax, handler
+
+    def get_environment_info(self):
+        """
+        Returns a string with information about the current state of the environment.
+        
+        Returns:
+            A string containing information about available items and the observation
+        """
+        # Get available items
+        available_items_info = []
+        
+        for idx in self.available_items:
+            item = self.items[idx]
+            item_info = f"Item {idx} (ID: {item.id}): {item.dx}x{item.dy}x{item.dz}, Volume: {item.volume}"
+            available_items_info.append(item_info)
+        
+        # Format the observation (3D grid)
+        obs_str = "Current Grid State:\n"
+        for z in range(self.grid.shape[2]):
+            obs_str += f"Layer z={z}:\n"
+            for x in range(self.grid.shape[0]):
+                row = ""
+                for y in range(self.grid.shape[1]):
+                    row += "■ " if self.grid[x, y, z] == 1 else "□ "
+                obs_str += row + "\n"
+            obs_str += "\n"
+        
+        # Combine all information
+        result = "Environment Information:\n"
+        result += "=====================\n\n"
+        
+        result += "Available Items:\n"
+        if available_items_info:
+            result += "\n".join(available_items_info)
+        else:
+            result += "No items available (all placed)"
+        result += "\n\n"
+        
+        result += obs_str
+        
+        return result
