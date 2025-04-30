@@ -2,6 +2,9 @@ from packing3d_env import Packing3DEnv, Item, Action
 import matplotlib.pyplot as plt
 import time
 from openai import OpenAI
+from packing_agents import EnvironmentController
+from packing_agents import PackingAgent
+from packing_agents import PackingAgent2
 
 items = [
     Item(2, 2, 2, id=1),
@@ -93,13 +96,6 @@ items2 = [
     Item(4, 3, 3, id=30)
 ]
 
-def shelf_ai_testing(items, actions):
-    env = Packing3DEnv(items=items)
-
-    obs, _ = env.reset()
-
-    # Launch the interactive viewer
-    env.interactive_render(actions)
 
 def cli_testing(items, actions):
     env = Packing3DEnv(items=items)
@@ -136,4 +132,6 @@ def cli_testing(items, actions):
     plt.close(fig)
 
 if __name__ == "__main__":
-    cli_testing(items, actions)
+    # build_testing(items, actions)
+    agent = PackingAgent2(items2)
+    agent.start_packing(filename="04-attempt.json")

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from matplotlib.widgets import Button
+import json
 
 class Item:
     def __init__(self, dx: float, dy: float, dz: float, id=None):
@@ -85,11 +86,11 @@ class Action:
         self.z = z
 
 class Packing3DEnv(gym.Env):
-    def __init__(self, space_size=(10, 10, 10), items=None):
+    def __init__(self, space_size=(10, 10, 10), items=None, name="packing_3d_env"):
         super(Packing3DEnv, self).__init__()
 
         self.space_size = space_size
-        
+        self.name = name
         # Handle items
         if items is None:
             self.items = [Item(1, 1, 1)]
@@ -136,15 +137,15 @@ class Packing3DEnv(gym.Env):
         )
         if not fits:
             print(f"Item {item.id if item.id is not None else item_idx} does not fit with current orientation at position ({x}, {y}, {z})")
-            return self.grid.copy(), -1, False, False, {"error": "Item doesn't fit"}
+            return self.grid.copy(), -1, False, False, {"error": f"Item of index {item_idx} doesn't fit at ({x}, {y}, {z})"}
         
         legal, message = self.placed_legally(item=item, action=action)
         if not legal:
-            return self.grid.copy(), -1, False, False, {"error": message}
+            return self.grid.copy(), -1, False, False, {"error with placing item of index {item_idx} at ({x}, {y}, {z})": message}
 
         region = self.grid[x:x+dx, y:y+dy, z:z+dz]
         if np.any(region):
-            return self.grid.copy(), -1, False, False, {"error": "Space already occupied"}
+            return self.grid.copy(), -1, False, False, {"error": f"Space at ({x}, {y}, {z}) is already occupied. Cannot place item of index {item_idx}."}
 
         self.grid[x:x+dx, y:y+dy, z:z+dz] = 1
         # Store the item ID (using the actual item_idx + 1) in the item_grid
@@ -164,7 +165,7 @@ class Packing3DEnv(gym.Env):
 
         done = len(self.available_items) == 0
         reward = item.volume  # volume of item placed
-        return self.grid.copy(), reward, done, False, {"placed_item": item_idx}
+        return self.grid.copy(), reward, done, False, {f"successfully placed item of index {item_idx} at ({x}, {y}, {z}). Item id: {item.id}": item.id}
     
     def placed_legally(self, item, action):
         message = ""
@@ -504,6 +505,12 @@ class Packing3DEnv(gym.Env):
         
         return fig, ax, handler
 
+    def get_placed_items(self):
+        return [item for item in self.items if item.x is not None]
+
+    def get_remaining_items(self):
+        return [item for item in self.items if item.x is None]
+
     def get_environment_info(self):
         """
         Returns a string with information about the current state of the environment.
@@ -544,3 +551,73 @@ class Packing3DEnv(gym.Env):
         result += obs_str
         
         return result
+
+    # To save the state
+    def save_state(self, env, filename=None):
+        """Save the current state of the packing environment to a JSON file."""
+        if filename is None:
+            filename = f"{self.name}_state.json"
+        state = {
+            "space_size": env.space_size,
+            "grid": env.grid.tolist(),  # Convert numpy array to list
+            "item_grid": env.item_grid.tolist(),
+            "available_items": env.available_items,
+            "items": [
+                {
+                    "id": item.id,
+                    "dx": item.dx,
+                    "dy": item.dy,
+                    "dz": item.dz,
+                    "x": item.x,
+                    "y": item.y,
+                    "z": item.z,
+                    "com_x": item.com_x,
+                    "com_y": item.com_y,
+                    "com_z": item.com_z,
+                    "is_red_space": item.is_red_space
+                }
+                for item in env.items
+            ]
+        }
+        
+        with open(filename, 'w') as f:
+            json.dump(state, f, indent=2)
+        
+        print(f"State saved to {filename}")
+        return filename
+
+    # To load the state
+    def load_state(filename=None, env=None):
+        """Load a saved state from a JSON file into a new or existing environment."""
+        from packing3d_env import Packing3DEnv, Item, RedSpace
+        import numpy as np
+        
+        with open(filename, 'r') as f:
+            state = json.load(f)
+        
+        # Create items from saved state
+        items = []
+        for item_data in state["items"]:
+            if item_data["is_red_space"]:
+                item = RedSpace(item_data["dx"], item_data["dy"], item_data["dz"], item_data["id"])
+            else:
+                item = Item(item_data["dx"], item_data["dy"], item_data["dz"], item_data["id"])
+            
+            # Set position if it was placed
+            if item_data["x"] is not None:
+                item.set_position(item_data["x"], item_data["y"], item_data["z"])
+                item.set_com(item_data["com_x"], item_data["com_y"], item_data["com_z"])
+            
+            items.append(item)
+        
+        # Create new environment if none provided
+        if env is None:
+            env = Packing3DEnv(space_size=state["space_size"], items=items)
+        
+        # Restore environment state
+        env.grid = np.array(state["grid"])
+        env.item_grid = np.array(state["item_grid"])
+        env.available_items = state["available_items"]
+        
+        print(f"State loaded from {filename}")
+        return env
