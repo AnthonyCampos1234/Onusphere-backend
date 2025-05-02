@@ -7,7 +7,6 @@ import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
 
-
 def parse_csv(file_path: str):
     """
     Parse a CSV file into a DataFrame.
@@ -137,7 +136,7 @@ def add_instructions_to_dataframe(df, special_instructions) -> pd.DataFrame:
         # Now both sides are strings
         if item_id in df['Item'].values:
             print(f"Item {item_id} found in DataFrame.")
-            df.loc[df['Item'] == item_id, 'Special_Instruction'] = instruction
+            df.loc[df['Item'] == item_id, 'Special_Instructions'] = instruction
         else:
             print(f"Item {item_id} NOT found in DataFrame.")
 
