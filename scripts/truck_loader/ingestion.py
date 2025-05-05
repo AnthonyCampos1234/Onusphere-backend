@@ -1,4 +1,3 @@
-from scripts.truck_loader.order_reciept_interface import CustomerOrderReceipt, SpecialInstructions
 from typing import List
 import json
 import os
@@ -6,6 +5,9 @@ import uuid
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from models.order_reciept import OrderReceipt
+from models.special_instructions import SpecialInstructions
 
 def parse_csv(file_path: str):
     """
@@ -199,7 +201,7 @@ def get_upcoming_shipments(email_body: str) -> List[str]:
 
     return upcoming_shipments
 
-def create_customer_receipt(email_data: dict) -> CustomerOrderReceipt:
+def create_customer_receipt(email_data: dict) -> OrderReceipt:
   """
     Create a customer order receipt from email data.
 
@@ -224,7 +226,7 @@ def create_customer_receipt(email_data: dict) -> CustomerOrderReceipt:
   # Combine special instructions into the DataFrame
   final_df = add_instructions_to_dataframe(df, special_instructions)
 
-  # Return the customer order receipt object
+  # Return the order receipt object
   return {
       "customer_id": customer_id,
       "order_id": uuid.uuid4(),

@@ -3,7 +3,6 @@ import sys
 import os
 import tempfile
 import uuid
-from reportlab.pdfgen import canvas
 import pandas as pd
 import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))

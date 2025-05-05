@@ -1,7 +1,7 @@
 from typing import List
 from datetime import datetime
-from models.customer import Customer
-from models.customer_order import CustomerOrder
+from models.account import Customer
+from models.order import Order
 from models.item import Item
 
 def find_new_items(df) -> List:
@@ -16,7 +16,7 @@ def find_new_items(df) -> List:
 
     return missing_items
 
-def store_customer_order_in_db(receipt):
+def save_state(receipt):
     """
     Saves a customer order to the database using the order receipt object.
     """
@@ -30,7 +30,7 @@ def store_customer_order_in_db(receipt):
     item_ids = receipt.order_details["Item"].astype(str).unique()
     items = list(Item.objects(item_number__in=item_ids))
 
-    order = CustomerOrder(
+    order = Order(
         customer=customer,
         item=items,
         order_date=datetime.strptime(receipt.date_ordered, "%m/%d/%y")

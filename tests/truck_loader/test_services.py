@@ -48,8 +48,8 @@ def test_find_new_items():
     assert "123" not in missing_items
     assert "456" not in missing_items
 
-from models.customer import Customer
-from models.customer_order import CustomerOrder
+from models.account import Customer
+from models.order import CustomerOrder
 import pandas as pd
 from types import SimpleNamespace
 
