@@ -4,3 +4,11 @@ pandas
 gymnasium
 numpy
 matplotlib
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+pymongo
+motor
+mongoengine
