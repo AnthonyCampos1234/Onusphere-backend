@@ -3,6 +3,7 @@ from jose import jwt, JWTError
 from bson import ObjectId
 
 from models.account import Account
+from models.order import Order
 from models.request_bodies import Login, SignUp, TriggerRequest
 from utils.auth import create_access_token, SECRET_KEY, ALGORITHM
 from utils.security import hash_password, verify_password
@@ -10,9 +11,9 @@ from utils.dependencies import get_current_user
 
 router = APIRouter()
 
-order_id_holder = {"id": None}
-truck_loader_response_holder = {"data": None}
 pipeline_trigger_event = None
+order_id_holder = {"id": None}
+email_data = None
 
 @router.get("/")
 def read_root():
@@ -41,19 +42,23 @@ def login(payload: Login):
     return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/email-trigger")
-def trigger_pipeline():
-    pipeline_trigger_event.set()
-    return {"status": "Pipeline trigger signal sent."}
+async def trigger_pipeline(request: Request):
+    payload = await request.json()
+    email = request.headers.get("email")
+    
+    if email:
+        account = Account.objects(email=email).first()
+        if account:
+            # Associate account context here if needed
+            routes.email_data = payload
+            return {"status": "Pipeline triggered"}
+    raise HTTPException(status_code=400, detail="Email header missing or invalid")
 
 @router.post("/pipeline-trigger")
 def email_trigger(payload: TriggerRequest):
     order_id_holder["id"] = payload.order_id
     pipeline_trigger_event.set()
     return {"status": "Email event triggered.", "order_id": payload.order_id}
-
-@router.get("/result")
-def get_last_pipeline_result():
-    return {"data": truck_loader_response_holder["data"]}
 
 @router.get("/me")
 def get_current_user_info(current_user: Account = Depends(get_current_user)):

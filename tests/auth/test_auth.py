@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 from models.account import Account
-from pipeline.truck_loader.app import app
+from pipeline.app import app
 
 TEST_DB = "test_auth_db"
 

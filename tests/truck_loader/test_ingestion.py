@@ -1,13 +1,30 @@
-from datetime import datetime
 import sys
 import os
 import tempfile
-import uuid
+from bson import ObjectId
 import pandas as pd
 import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-
+from models.customer import Customer
+from models.item import Item
+from models.order import Order
 from scripts.truck_loader.ingestion import create_customer_receipt, parse_csv, parse_pdf
+from mongoengine import connect, disconnect
+
+TEST_DB = "customer_orders_test_db"
+
+@pytest.fixture(scope="module", autouse=True)
+def db():
+    connect(
+        TEST_DB,
+        host="mongodb://localhost:27017/" + TEST_DB,
+        uuidRepresentation='standard'
+    )
+    yield
+    Item.drop_collection()
+    Customer.drop_collection()
+    Order.drop_collection()
+    disconnect()
 
 def test_parse_csv_valid():
     # Create temporary CSV with valid data
@@ -41,15 +58,16 @@ def test_parse_csv_invalid_path():
     with pytest.raises(FileNotFoundError):
         parse_csv("/path/does/not/exist.csv")
 
-def test_extract_special_instructions():    
-    instructions, date_ordered, customer_id = parse_pdf("data/example_order.pdf")
+def test_parse_pdf():    
+    domain, date_ordered, units_per_pallet, special_instructions = parse_pdf("data/example_order.pdf")
 
-    assert len(instructions) == 6
+    assert len(special_instructions) == 6
     assert date_ordered == "11/18/24"
-    assert customer_id == "Target.York PA 9475"
-    assert instructions[0]["item_id"] == "10126054"
-    assert "Gaylords" in instructions[0]["instruction"]
-
+    assert domain == "shorr.com"
+    assert special_instructions[0]["item_id"] == "10126054"
+    assert "Gaylords" in special_instructions[0]["instruction"]
+    assert units_per_pallet[0]["item_id"] == "10202638"
+    assert units_per_pallet[0]["units_per_pallet"] == 2400
 
 def test_create_order_reciept():
     email_data = {
@@ -69,25 +87,20 @@ def test_create_order_reciept():
                         P: 717-790-6260  | C: 717-462-8550""",
     }
 
-    result = create_customer_receipt(email_data)
+    order_data = create_customer_receipt(email_data)
 
-    # Validate order_id exists and is a UUID
-    assert "order_id" in result
-    uuid_obj = result["order_id"]
-    assert isinstance(uuid_obj, uuid.UUID)
+    assert order_data["customer_email_domain"] == "shorr.com"
+    assert ObjectId.is_valid(order_data["order_id"]) # make sure order exists in DB
 
-    # Validate date_ordered is a date-like object or string
-    assert "date_ordered" in result
-    try:
-        parsed_date = datetime.strptime(result["date_ordered"], "%m/%d/%y")
-    except ValueError:
-        pytest.fail("date_ordered is not in MM/DD/YY format")
+    order = Order.objects(id=ObjectId(order_data["order_id"])).first()
+    assert order is not None, "Order was not found in the database"
 
-    # Validate upcoming_shipment_times is a list of strings
-    assert isinstance(result["upcoming_shipment_times"], list)
-    assert all(isinstance(t, str) for t in result["upcoming_shipment_times"])
-    assert "7am" in result["upcoming_shipment_times"]
+    # Validate basic order fields
+    assert len(order.items) > 0, "No order items found"
+    assert order.upcoming_shipment_times == "7am, 9am, 11am, 11am, 1pm"
 
-    # Validate order_details is a DataFrame and contains the expected column
-    assert isinstance(result["order_details"], pd.DataFrame)
-    assert "Special_Instructions" in result["order_details"].columns
+    # Validate item-level data (example for the first item)
+    item = order.items[0]
+    assert item.item.item_number == "10202638"
+    assert len(item.item.special_instructions) == 0
+    assert item.number_pallets > 0

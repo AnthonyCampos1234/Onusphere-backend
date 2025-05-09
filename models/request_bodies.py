@@ -11,3 +11,8 @@ class SignUp(BaseModel):
 class Login(BaseModel):
     email: str
     password: str
+
+class EmailData(BaseModel):
+    csv_file_path: str
+    pdf_file_path: str
+    email_body: str

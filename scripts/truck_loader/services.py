@@ -1,39 +1,22 @@
 from typing import List
-from datetime import datetime
-from models.account import Customer
+from bson import ObjectId
 from models.order import Order
-from models.item import Item
 
-def find_new_items(df) -> List:
+def find_items_without_dimensions_from_order(order_id) -> List:
     """
-    Returns a list of item_numbers that exist in the database
-    but are NOT present in the given DataFrame.
+    Returns a list of item_numbers that are a part of the Order but
+    do not have completed dimensions.
     """
-    current_items = set(df["Item"].astype(str).unique())
-    all_db_items = set(Item.objects.scalar("item_number"))
+    order = Order.objects(id=ObjectId(order_id)).first()
 
-    missing_items = list(all_db_items - current_items)
+    if not order:
+        raise ValueError(f"No order found with id {order_id}")
+    
+    missing_items = []
+
+    for order_item in order.items:
+        item = order_item.item
+        if not item or not all([item.height, item.width, item.length]):
+            missing_items.append(item.item_number if item else "Unknown Item")
 
     return missing_items
-
-def save_state(receipt):
-    """
-    Saves a customer order to the database using the order receipt object.
-    """
-
-    # 1. Get or create the customer
-    customer = Customer.objects(name=receipt.customer_id).first()
-    if not customer:
-        customer = Customer(name=receipt.customer_id, email="unknown@example.com")
-        customer.save()
-
-    item_ids = receipt.order_details["Item"].astype(str).unique()
-    items = list(Item.objects(item_number__in=item_ids))
-
-    order = Order(
-        customer=customer,
-        item=items,
-        order_date=datetime.strptime(receipt.date_ordered, "%m/%d/%y")
-    )
-    order.save()
-    return order

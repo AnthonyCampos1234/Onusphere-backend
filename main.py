@@ -24,11 +24,6 @@ app.add_middleware(
 # Include all routes from routes.py
 app.include_router(router)
 
-# Root endpoint
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to Onusphere API"}
-
 # Run with: uvicorn main:app --reload
 if __name__ == "__main__":
     import uvicorn

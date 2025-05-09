@@ -1,4 +1,5 @@
-from mongoengine import Document, ReferenceField, ListField, DateTimeField, EmbeddedDocument, IntField, EmbeddedDocumentField
+from mongoengine import Document, ReferenceField, ListField, DateTimeField, EmbeddedDocument, IntField, EmbeddedDocumentField, StringField
+from models.customer import Customer
 from models.item import Item
 
 class OrderItem(EmbeddedDocument):
@@ -16,6 +17,8 @@ class OrderItem(EmbeddedDocument):
         self.number_pallets = self.calculate_pallets(order_quantity, units_per_pallet)
 
 class Order(Document):
+    customer = ReferenceField(Customer)
     items = ListField(EmbeddedDocumentField(OrderItem), required=True)
     order_date = DateTimeField(required=True)
-
+    upcoming_shipment_times = StringField(required=True)
+    loading_instructions = StringField()

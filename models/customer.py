@@ -1,6 +1,7 @@
-from mongoengine import StringField, ReferenceField, ListField, Document
-from models.order import Order
+from mongoengine import StringField, ReferenceField, Document
+from models.account import Account
 
 class Customer(Document):
-  name = StringField(required=True)
-  orders = ListField(ReferenceField(Order))
+  account = ReferenceField(Account)
+  name = StringField() # Will be entered by User later
+  email_domain = StringField(required=True)

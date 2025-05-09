@@ -1,4 +1,3 @@
-import time
 import sys
 import os
 from fastapi.testclient import TestClient
@@ -6,10 +5,11 @@ import pytest
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
+from pipeline.truck_loader.pipeline import start_truck_loader_thread
 from models.order import Order
 from models.account import Account
 from models.customer import Customer
-from pipeline.truck_loader import app
+from pipeline.app import app
 from mongoengine import connect, disconnect
 
 client = TestClient(app)
@@ -30,30 +30,29 @@ def db():
     disconnect()
 
 
-def test_pipeline_end_to_end():
-    account = Account(name="Account").save()
+def test_pipeline_email_initiation_no_missing_items():
+    start_truck_loader_thread()
+    
+    signup_payload = {
+        "email": "testuser@example.com",
+        "password": "testpassword123",
+        "name": "Test User"
+    }
+    signup_res = client.post("/signup", json=signup_payload)
+    assert signup_res.status_code == 200
 
-    customer = Customer(name="Customer").save()
-    account.addCustomer(customer)
+    email_data = {
+        "csv_file_path": "data/example_order.csv",
+        "pdf_file_path": "data/example_order.pdf",
+        "email_body": "Warehouse team- please have loaded for below times\n7am\n9am\n11am"
+    }
 
+    headers = {
+        "email": "testuser@example.com"
+    }
 
+    email_res = client.post("/email-trigger", json=email_data, headers=headers)
+    assert email_res.status_code == 200
 
-
-
-    # Create a mock OrderReceipt in the DB
-    order = Order.objects.create(
-        # Add whatever fields your OrderReceipt needs
-    )
-
-    # Trigger the pipeline
-    response = client.post("/email-trigger", json={"order_id": str(order.id)})
-    assert response.status_code == 200
-
-    # Wait for the background pipeline to complete
-    time.sleep(2)  # Adjust based on how long the pipeline takes
-
-    # Check the result
-    result = client.get("/result")
-    assert result.status_code == 200
-    assert result.json()["data"] is not None
-    assert "response" in result.json()["data"]
+    # Issue now
+    # Using on the Account info I need to find the order that was completed 

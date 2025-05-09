@@ -1,5 +1,5 @@
 from mongoengine import Document, StringField, ListField, ReferenceField
-from models.customer import Customer
+from customer import Customer
 
 class Account(Document):
     name = StringField(required=True)
