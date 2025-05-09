@@ -1,13 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
 from jose import jwt, JWTError
 from bson import ObjectId
-
+from fastapi import Request
+from threading import Event
 from models.account import Account
 from models.order import Order
 from models.request_bodies import Login, SignUp, TriggerRequest
 from utils.auth import create_access_token, SECRET_KEY, ALGORITHM
 from utils.security import hash_password, verify_password
 from utils.dependencies import get_current_user
+from . import routes
 
 router = APIRouter()
 
@@ -21,7 +23,7 @@ def read_root():
 
 @router.post("/signup")
 def signup(payload: SignUp):
-    if Account.objects(email=payload.email).first():
+    if Account.objects(email=payload.email).first(): # type: ignore[attr-defined]
         raise HTTPException(status_code=400, detail="User already exists")
 
     hashed_pw = hash_password(payload.password)
@@ -34,7 +36,7 @@ def signup(payload: SignUp):
 
 @router.post("/login")
 def login(payload: Login):
-    account = Account.objects(email=payload.email).first()
+    account = Account.objects(email=payload.email).first() # type: ignore
     if not account or not verify_password(payload.password, account.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
@@ -47,7 +49,7 @@ async def trigger_pipeline(request: Request):
     email = request.headers.get("email")
     
     if email:
-        account = Account.objects(email=email).first()
+        account = Account.objects(email=email).first() # type: ignore
         if account:
             # Associate account context here if needed
             routes.email_data = payload
@@ -56,15 +58,14 @@ async def trigger_pipeline(request: Request):
 
 @router.post("/pipeline-trigger")
 def email_trigger(payload: TriggerRequest):
-    order_id_holder["id"] = payload.order_id
-    pipeline_trigger_event.set()
+    pipeline_trigger_event = Event()
     return {"status": "Email event triggered.", "order_id": payload.order_id}
 
 @router.get("/me")
 def get_current_user_info(current_user: Account = Depends(get_current_user)):
     """Return information about the current logged-in user"""
     return {
-        "id": str(current_user.id),
+        "id": str(current_user.pk),
         "name": current_user.name,
         "email": current_user.email,
         "company_name": current_user.company_name if hasattr(current_user, 'company_name') else None,
@@ -87,10 +88,9 @@ def update_current_user(update_data: dict, current_user: Account = Depends(get_c
         current_user.job_title = update_data.get('job_title')
     if 'timezone' in update_data:
         current_user.timezone = update_data.get('timezone')
-        
     # Save the updated user
     current_user.save()
-    
+
     return {
         "status": "success",
         "message": "User profile updated successfully"
