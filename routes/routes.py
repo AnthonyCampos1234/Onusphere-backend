@@ -63,7 +63,6 @@ def get_current_user_info(current_user: Account = Depends(get_current_user)):
         "name": current_user.name,
         "email": current_user.email,
         "company_name": current_user.company_name if hasattr(current_user, 'company_name') else None,
-        "company_type": current_user.company_type if hasattr(current_user, 'company_type') else None,
         "phone": current_user.phone if hasattr(current_user, 'phone') else None,
         "job_title": current_user.job_title if hasattr(current_user, 'job_title') else None,
         "timezone": current_user.timezone if hasattr(current_user, 'timezone') else "America/New_York"
@@ -77,8 +76,6 @@ def update_current_user(update_data: dict, current_user: Account = Depends(get_c
         current_user.name = update_data.get('name')
     if 'company_name' in update_data:
         current_user.company_name = update_data.get('company_name')
-    if 'company_type' in update_data:
-        current_user.company_type = update_data.get('company_type')
     if 'phone' in update_data:
         current_user.phone = update_data.get('phone')
     if 'job_title' in update_data:
