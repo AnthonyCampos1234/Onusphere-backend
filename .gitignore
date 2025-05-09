@@ -46,3 +46,4 @@ Thumbs.db
 
 __pycache__
 .coverage__pycache__/
+.git

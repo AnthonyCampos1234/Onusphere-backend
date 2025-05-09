@@ -16,6 +16,7 @@ TEST_DB = "customer_orders_test_db"
 
 @pytest.fixture(scope="module", autouse=True)
 def db():
+    disconnect()
     connect(
         TEST_DB,
         host="mongodb://localhost:27017/" + TEST_DB,

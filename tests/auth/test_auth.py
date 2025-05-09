@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 from models.account import Account
-from pipeline.app import app
+from main import app
 
 TEST_DB = "test_auth_db"
 
@@ -14,6 +14,7 @@ client = TestClient(app)
 
 @pytest.fixture(scope="module", autouse=True)
 def db():
+    disconnect()
     connect(TEST_DB, host=f"mongodb://localhost:27017/{TEST_DB}")
     yield
     Account.drop_collection()
@@ -25,7 +26,7 @@ def test_successful_signup():
         "email": "testuser@example.com",
         "password": "securepassword123"
     }
-    response = client.post("/signup", json=payload)
+    response = client.post("/auth/signup", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
@@ -37,7 +38,7 @@ def test_signup_duplicate_email():
         "email": "testuser@example.com",
         "password": "anotherpass"
     }
-    response = client.post("/signup", json=payload)
+    response = client.post("/auth/signup", json=payload)
     assert response.status_code == 400
     assert response.json()["detail"] == "User already exists"
 
@@ -46,7 +47,7 @@ def test_successful_login():
         "email": "testuser@example.com",
         "password": "securepassword123"
     }
-    response = client.post("/login", json=payload)
+    response = client.post("/auth/login", json=payload)
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
@@ -57,7 +58,7 @@ def test_login_wrong_password():
         "email": "testuser@example.com",
         "password": "wrongpassword"
     }
-    response = client.post("/login", json=payload)
+    response = client.post("/auth/login", json=payload)
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"
 
@@ -66,6 +67,6 @@ def test_login_nonexistent_user():
         "email": "ghost@example.com",
         "password": "doesntmatter"
     }
-    response = client.post("/login", json=payload)
+    response = client.post("/auth/login", json=payload)
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"

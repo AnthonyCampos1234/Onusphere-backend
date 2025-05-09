@@ -9,8 +9,8 @@ from pipeline.truck_loader.pipeline import start_truck_loader_thread
 from models.order import Order
 from models.account import Account
 from models.customer import Customer
-from pipeline.app import app
 from mongoengine import connect, disconnect
+from main import app
 
 client = TestClient(app)
 
@@ -18,6 +18,7 @@ TEST_DB = "customer_orders_test_db"
 
 @pytest.fixture(scope="module", autouse=True)
 def db():
+    disconnect()
     connect(
         TEST_DB,
         host="mongodb://localhost:27017/" + TEST_DB,
@@ -38,7 +39,7 @@ def test_pipeline_email_initiation_no_missing_items():
         "password": "testpassword123",
         "name": "Test User"
     }
-    signup_res = client.post("/signup", json=signup_payload)
+    signup_res = client.post("/auth/signup", json=signup_payload)
     assert signup_res.status_code == 200
 
     email_data = {
@@ -51,7 +52,7 @@ def test_pipeline_email_initiation_no_missing_items():
         "email": "testuser@example.com"
     }
 
-    email_res = client.post("/email-trigger", json=email_data, headers=headers)
+    email_res = client.post("/testing/email-trigger", json=email_data, headers=headers)
     assert email_res.status_code == 200
 
     # Issue now

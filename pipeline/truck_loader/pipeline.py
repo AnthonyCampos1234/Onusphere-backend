@@ -48,7 +48,7 @@ def run_pipline_on_email(email_data):
     response = "sample truck load"
     print("updating db...")
     # Update DB with the instructions
-    Order.objects(id=order_id).update_one(set__loading_instructions=response)
+    Order.objects(id=order_id).update_one(set__loading_instructions=response) # type: ignore
     print("updated db")
     return order_id
 
@@ -62,5 +62,5 @@ def run_pipeline_on_state(order_id):
         response = "sample truck load"
 
         # Update DB with the instructions
-        Order.objects(id=order_id).update_one(set__loading_instructions=response)
+        Order.objects(id=order_id).update_one(set__loading_instructions=response) # type: ignore
 

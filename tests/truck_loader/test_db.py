@@ -17,6 +17,7 @@ TEST_DB = "test_customer_orders"
 
 @pytest.fixture(scope="module", autouse=True)
 def db():
+    disconnect()
     connect(TEST_DB, host=f"mongodb://localhost:27017/{TEST_DB}", uuidRepresentation="standard")
     yield
     Item.drop_collection()

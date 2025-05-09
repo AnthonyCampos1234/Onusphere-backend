@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.routes import router
 from config.db import connect_db
+from routes import router
 
 # Create FastAPI app
 app = FastAPI(title="Onusphere API", 
