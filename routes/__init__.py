@@ -6,6 +6,6 @@ from fastapi import APIRouter
 
 router = APIRouter()
 router.include_router(auth_router, prefix="/auth")
-router.include_router(account_router, prefix="/pipeline")
+router.include_router(account_router, prefix="/account")
 router.include_router(testing_router, prefix="/testing")
 router.include_router(customer_router, prefix="/customers")

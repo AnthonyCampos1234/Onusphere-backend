@@ -6,4 +6,5 @@ class Item(Document):
     width = FloatField() # in inches
     length = FloatField() # in inches
     special_instructions = StringField()
-
+    description = StringField()
+    units_per_pallet = IntField()
