@@ -42,7 +42,7 @@ def get_orders_from_customer(id: str, current_user: Account = Depends(get_curren
     
     def serialize_order(order):
         return {
-            "id": str(order.id),
+            "id": str(order.pk),
             "items": [
                 {
                     "item_id": str(oi.item.id),

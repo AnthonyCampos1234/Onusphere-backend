@@ -5,8 +5,8 @@ import os
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY") # type: str
+ALGORITHM = os.getenv("ALGORITHM") # type: str
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 def create_access_token(data: dict, expires_delta: timedelta = None):

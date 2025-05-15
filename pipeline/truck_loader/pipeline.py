@@ -6,10 +6,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"
 from models.order import Order
 from scripts.truck_loader.ingestion import create_customer_receipt
 from scripts.truck_loader.services import find_items_without_dimensions_from_order
-import routes
+import shared_state
 
 pipeline_trigger_event = threading.Event()
-routes.pipeline_trigger_event = pipeline_trigger_event  # inject shared event
+shared_state.pipeline_trigger_event = pipeline_trigger_event  # inject shared event
 
 def start_truck_loader_thread():
     def pipeline_loop():
@@ -18,12 +18,13 @@ def start_truck_loader_thread():
             pipeline_trigger_event.clear()
 
             try:
-                order_id = routes.order_id_holder["id"]
+                order_id = shared_state.order_id_holder["id"]
                 print("Triggered: Running pipeline...")
                 if order_id:
                     run_pipeline_on_state(order_id)
                 else:
-                    order_id = run_pipline_on_email(routes.email_data)
+                    print("Running pipeline on email", )
+                    order_id = run_pipline_on_email(shared_state.email_data)
 
                 # send_email(order_id)
                 print("Loader response done for ", order_id)

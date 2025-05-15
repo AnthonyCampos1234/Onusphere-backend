@@ -31,7 +31,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
         
     # Get user from database
-    account = Account.objects(id=ObjectId(user_id)).first()
+    account = Account.objects(id=ObjectId(user_id)).first() # type: ignore
     
     if account is None:
         raise credentials_exception

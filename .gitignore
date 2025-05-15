@@ -47,3 +47,10 @@ Thumbs.db
 __pycache__
 .coverage__pycache__/
 .git
+service_account.json
+token.json
+onusphere_secret.json
+.coverage
+service_account.json
+token.json
+onusphere_secret.json

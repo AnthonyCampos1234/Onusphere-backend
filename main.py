@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.db import connect_db
 from routes import router
+from scripts.listen_gmail import start_gmail_listener_thread
+from pipeline.truck_loader.pipeline import start_truck_loader_thread
 
 # Create FastAPI app
 app = FastAPI(title="Onusphere API", 
@@ -23,6 +25,13 @@ app.add_middleware(
 
 # Include all routes from routes.py
 app.include_router(router)
+
+@app.on_event("startup")
+def startup_event():
+    print("🔄 Starting pipeline and Gmail listener...")
+    start_truck_loader_thread()
+    start_gmail_listener_thread()
+    print("Background services started.")
 
 # Run with: uvicorn main:app --reload
 if __name__ == "__main__":
