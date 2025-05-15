@@ -1,4 +1,4 @@
-from mongoengine import Document, ReferenceField, ListField, DateTimeField, EmbeddedDocument, IntField, EmbeddedDocumentField, StringField
+from mongoengine import Document, ReferenceField, ListField, DateTimeField, EmbeddedDocument, IntField, EmbeddedDocumentField, StringField, DictField
 from models.customer import Customer
 from models.item import Item
 
@@ -20,5 +20,6 @@ class Order(Document):
     customer = ReferenceField(Customer)
     items = ListField(EmbeddedDocumentField(OrderItem), required=True)
     order_date = DateTimeField(required=True)
-    upcoming_shipment_times = StringField(required=True)
-    loading_instructions = StringField()
+    upcoming_shipment_times = ListField(StringField(), required=True)
+    status = StringField(required=True, choices=['pending', 'loaded', 'delivered'], default='pending')
+    loading_instructions = DictField()
