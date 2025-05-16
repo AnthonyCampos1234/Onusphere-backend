@@ -30,23 +30,33 @@ def get_customer(id: str, current_user: Account = Depends(get_current_user)):
 
 @router.get("/{id}/orders")
 def get_orders_from_customer(id: str, current_user: Account = Depends(get_current_user)):
-    customer = Customer.objects(id=id, account=current_user).first() # type: ignore
+    customer = Customer.objects(id=id, account=current_user).first()  # type: ignore
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    orders = Order.objects(customer=customer) # type: ignore
-    
+    orders = Order.objects(customer=customer)  # type: ignore
+
     def serialize_order(order):
         return {
             "id": str(order.pk),
-            "items": [
+            "order_batches": [
                 {
-                    "item_id": str(oi.item.id),
-                    "number_pallets": oi.number_pallets
-                } for oi in order.items
+                    "order_batch_id": str(ob.id),
+                    "number_pallets": ob.number_pallets,
+                    "items": [
+                        {
+                            "item_id": str(item.id),
+                            "item_number": item.item_number,
+                            "description": item.description,
+                            "units_per_pallet": item.units_per_pallet
+                        }
+                        for item in ob.item_ids
+                    ]
+                }
+                for ob in order.order_item_ids
             ],
             "order_date": order.order_date.isoformat(),
-            "upcoming_shipment_times": order.upcoming_shipment_times,
+            "shipment_times": order.shipment_times,
             "status": order.status,
             "loading_instructions": order.loading_instructions
         }

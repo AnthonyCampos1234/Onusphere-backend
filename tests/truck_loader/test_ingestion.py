@@ -5,9 +5,7 @@ from bson import ObjectId
 import pandas as pd
 import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from models.customer import Customer
-from models.item import Item
-from models.order import Order
+from models.types import Customer, Order, Item
 from scripts.truck_loader.ingestion import create_customer_receipt, parse_csv, parse_pdf
 from mongoengine import connect, disconnect
 
@@ -87,22 +85,25 @@ def test_create_order_reciept():
                         825 Locust Point Road | York, PA 17406
                         P: 717-790-6260  | C: 717-462-8550""",
     }
-
+    # Run the function under test
     order_data = create_customer_receipt(email_data)
 
+    # Validate returned order data
     assert order_data["customer_email_domain"] == "shorr.com"
-    assert ObjectId.is_valid(order_data["order_id"]) # make sure order exists in DB
+    assert ObjectId.is_valid(order_data["order_id"]), "Invalid order_id"
 
-    order = Order.objects(id=ObjectId(order_data["order_id"])).first() # type: ignore
+    # Fetch order from DB
+    order = Order.objects(id=ObjectId(order_data["order_id"])).first()
     assert order is not None, "Order was not found in the database"
 
     # Validate basic order fields
-    assert len(order.items) > 0, "No order items found"
-    assert order.upcoming_shipment_times == ["7am", "9am", "11am", "11am", "1pm"]
+    assert len(order.order_item_ids) > 0, "No order items found"
+    assert order.shipment_times == ["7am", "9am", "11am", "11am", "1pm"]
 
-    # Validate item-level data (example for the first item)
-    item = order.items[0]
-    assert item.item.item_number == "10202638"
-    assert len(item.item.special_instructions) == 0
-    assert item.number_pallets > 0
+    # Validate item-level data (check first OrderBatch and its Item)
+    order_batch = order.order_item_ids[0]
+    item = order_batch.item_ids[0]
 
+    assert item.item_number == "10202638"
+    assert len(item.special_instructions) == 0
+    assert order_batch.number_pallets > 0

@@ -26,13 +26,14 @@ class Member(Document):
 # ===== Customer =====
 class Customer(Document):
     date_created = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
-    account_id = fields.ReferenceField(Account, required=True)
+    account = fields.ReferenceField(Account, required=True)
     name = fields.StringField(required=True)
     email_domain = fields.StringField(required=True)
 
 
 # ===== Item =====
 class Item(Document):
+    item_number = fields.StringField(required=True)
     height = fields.FloatField(required=True)
     width = fields.FloatField(required=True)
     length = fields.FloatField(required=True)
@@ -60,7 +61,7 @@ class OrderBatch(Document):
 # ===== Order =====
 class Order(Document):
     date_created = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
-    customer_id = fields.ReferenceField(Customer, required=True)
+    customer = fields.ReferenceField(Customer, required=True)
     order_item_ids = fields.ListField(fields.ReferenceField(OrderBatch), required=True)
     order_date = fields.DateField(required=True)
     shipment_times = fields.ListField(fields.StringField(), required=True)

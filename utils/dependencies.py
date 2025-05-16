@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from bson import ObjectId
 
-from models.types import Account
+from models.types import Member 
 from .auth import SECRET_KEY, ALGORITHM
 
 # OAuth2 password bearer token for FastAPI
@@ -11,7 +11,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     """
-    Dependency to get the current user from the JWT token
+    Dependency to get the current member from the JWT token
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -30,10 +30,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
         
-    # Get user from database
-    account = Account.objects(id=ObjectId(user_id)).first() # type: ignore
+    # Get member from database
+    member = Member.objects(id=ObjectId(user_id)).first()
     
-    if account is None:
+    if member is None:
         raise credentials_exception
         
-    return account
+    return member
+

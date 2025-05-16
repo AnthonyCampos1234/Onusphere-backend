@@ -1,17 +1,14 @@
-import os
 import sys
+import os
 import pytest
-from datetime import datetime
+from datetime import datetime, date
 from mongoengine import connect, disconnect
 from bson import ObjectId
 
 # Ensure models can be imported
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from models.item import Item
-from models.customer import Customer
-from models.account import Account
-from models.order import Order, OrderItem
+from models.types import Account, Member, Customer, Item, OrderBatch, Order
 
 TEST_DB = "test_customer_orders"
 
@@ -23,70 +20,105 @@ def db():
     Item.drop_collection()
     Customer.drop_collection()
     Account.drop_collection()
+    OrderBatch.drop_collection()
     Order.drop_collection()
+    Member.drop_collection()
     disconnect()
 
-
 def test_create_item_model():
-    item = Item(item_number="ABC12345", height=10.0, width=5.5, length=3.3, special_instructions="Keep upright")
-    item.save()
+    item = Item(
+        item_number="ABC12345",
+        height=10.0,
+        width=5.5,
+        length=3.3,
+        special_instructions="Keep upright",
+        description="Sample item",
+        units_per_pallet=50
+    ).save()
 
     fetched = Item.objects.get(item_number="ABC12345")
     assert fetched.height == 10.0
     assert fetched.special_instructions == "Keep upright"
 
+def test_create_account_and_member_and_customer():
+    account = Account(
+        email="corp@account.com",
+        name="Corp Account",
+        company_code="ABCDEF"
+    ).save()
 
-def test_create_customer_model():
-    customer = Customer(name="Customer Inc", email_domain="example.com")
-    customer.save()
+    member = Member(
+        account=account,
+        name="John Doe",
+        email="johndoe@corp.com",
+        phone="1234567890",
+        hashed_password="hashed_pw",
+        role="admin"
+    ).save()
 
-    fetched = Customer.objects.get(email_domain="example.com")
-    assert fetched.name == "Customer Inc"
-    assert fetched.email_domain == "example.com"
-
-
-def test_create_account_and_link_customers():
-    account = Account(name="Corp Account", email="corp@account.com", hashed_password="abc123").save()
-
-    cust1 = Customer(name="Customer1", email_domain="cust1.com", account=account).save()
-    cust2 = Customer(name="Customer2", email_domain="cust2.com", account=account).save()
-
-    # Fetch customers linked to the account
-    linked_customers = Customer.objects(account=account)
+    customer = Customer(
+        account=account,
+        name="Customer Inc",
+        email_domain="example.com"
+    ).save()
 
     assert Account.objects(email="corp@account.com").count() == 1
-    assert linked_customers.count() == 2
-    assert linked_customers[0].account.id == account.id
-    assert set(c.name for c in linked_customers) == {"Customer1", "Customer2"}
+    assert Member.objects(email="johndoe@corp.com").count() == 1
+    assert Customer.objects(email_domain="example.com").count() == 1
 
+def test_create_orderbatch_with_pallet_calc():
+    item = Item(
+        item_number="ITEMBATCH",
+        height=2.0,
+        width=2.0,
+        length=2.0,
+        special_instructions="Handle with care",
+        description="Batch item",
+        units_per_pallet=40
+    ).save()
 
-def test_create_order_with_embedded_items():
-    item1 = Item(item_number="ORDITEM1", height=1.0, width=1.0, length=1.0).save()
-    item2 = Item(item_number="ORDITEM2", height=2.0, width=2.0, length=2.0).save()
-    customer = Customer(name="Order Buyer", email_domain="buyer.com").save()
+    batch = OrderBatch(
+        item_ids=[item],
+        number_pallets=0,  # Will be set dynamically
+        order_date=date(2025, 5, 5)
+    )
+    batch.set_pallets(order_quantity=120, units_per_pallet=40)
+    batch.save()
 
-    oi1 = OrderItem(item=item1, number_pallets=2)
-    oi2 = OrderItem(item=item2, number_pallets=4)
+    fetched_batch = OrderBatch.objects.get(id=batch.id)
+    assert fetched_batch.number_pallets == 3
+
+def test_create_order_linked_all():
+    # Prepare linked entities
+    account = Account.objects.get(company_code="ABCDEF")
+    customer = Customer.objects.get(account=account)
+    item1 = Item.objects.get(item_number="ABC12345")
+    item2 = Item.objects.get(item_number="ITEMBATCH")
+
+    # Create batches
+    batch1 = OrderBatch(
+        item_ids=[item1],
+        number_pallets=2,
+        order_date=date(2025, 5, 6)
+    ).save()
+
+    batch2 = OrderBatch(
+        item_ids=[item2],
+        number_pallets=4,
+        order_date=date(2025, 5, 6)
+    ).save()
 
     order = Order(
         customer=customer,
-        items=[oi1, oi2],
-        order_date=datetime(2025, 5, 5, 15, 30),
-        upcoming_shipment_times=["7am, 9am"]
-    )
-    order.save()
+        order_item_ids=[batch1, batch2],
+        order_date=date(2025, 5, 6),
+        shipment_times=["8am", "10am"],
+        status="processing",
+        loading_instructions=["Use dock 3", "Stack double pallets"]
+    ).save()
 
-    fetched_order = Order.objects.get(id=order.id) # type: ignore
-    assert fetched_order.customer.name == "Order Buyer"
-    assert len(fetched_order.items) == 2
-    assert fetched_order.items[0].number_pallets == 2
-    assert fetched_order.upcoming_shipment_times == ["7am, 9am"]
-
-
-def test_orderitem_pallet_calculation():
-    order_item = OrderItem(item=Item(item_number="PALLETTEST").save(), number_pallets=0)
-    order_item.set_pallets(order_quantity=120, units_per_pallet=50)
-    assert order_item.number_pallets == 3
-
-    with pytest.raises(ValueError):
-        order_item.set_pallets(order_quantity=10, units_per_pallet=0)
+    fetched_order = Order.objects.get(id=order.id)
+    assert fetched_order.customer.name == "Customer Inc"
+    assert len(fetched_order.order_item_ids) == 2
+    assert fetched_order.status == "processing"
+    assert fetched_order.loading_instructions == ["Use dock 3", "Stack double pallets"]

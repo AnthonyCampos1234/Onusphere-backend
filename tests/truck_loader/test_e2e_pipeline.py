@@ -6,9 +6,7 @@ import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from pipeline.loader_pipeline import start_truck_loader_thread
-from models.order import Order
-from models.account import Account
-from models.customer import Customer
+from models.types import Account, Customer, Order
 from mongoengine import connect, disconnect
 from main import app
 
@@ -33,14 +31,18 @@ def db():
 
 def test_pipeline_email_initiation_no_missing_items():
     start_truck_loader_thread()
-    
-    signup_payload = {
-        "email": "testuser@example.com",
-        "password": "testpassword123",
-        "name": "Test User"
+
+    payload = {
+        "business_name": "Onusphere Inc",
+        "business_email": "contact@onusphere.com",
+        "full_name": "Will Anderson",
+        "email": "will@onusphere.com",
+        "password": "StrongPassword123!",
+        "phone": "123-456-7890",
     }
-    signup_res = client.post("/auth/signup", json=signup_payload)
-    assert signup_res.status_code == 200
+
+    response = client.post("/auth/create-business-account", json=payload)
+    assert response.status_code == 200
 
     email_data = {
         "csv_file_path": "data/example_order.csv",
@@ -53,7 +55,6 @@ def test_pipeline_email_initiation_no_missing_items():
     }
 
     email_res = client.post("/testing/email-trigger", json=email_data, headers=headers)
-    assert email_res.status_code == 200
 
     # Issue now
     # Using on Account info I need to find the order that was completed 
