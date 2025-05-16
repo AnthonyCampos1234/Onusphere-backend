@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
 from models.types import Account, Member
 from main import app
+from utils.security import hash_password
 
 TEST_DB = "test_auth_db"
 
@@ -21,6 +22,23 @@ def db():
     Account.drop_collection()
     Member.drop_collection()
     disconnect()
+
+@pytest.fixture(scope="module", autouse=False)
+def setup_test_user():
+    account = Account(
+        name="Login Test Business",
+        email="loginbusiness@example.com",
+        company_code="LOGIN123"
+    ).save()
+
+    Member(
+        account=account.pk,
+        name="Test User",
+        email="testuser@example.com",
+        phone="555-555-0000",
+        hashed_password=hash_password("securepassword123"),
+        role="admin"
+    ).save()
 
 def test_create_business_account_success():
     payload = {
@@ -138,32 +156,7 @@ def test_add_new_member_duplicate_email():
     assert response.status_code == 400  # Assuming you check for duplicates
     assert response.json()["detail"] == "Member already exists"
 
-
-
-"""
-def test_successful_signup():
-    payload = {
-        "name": "Test User",
-        "email": "testuser@example.com",
-        "password": "securepassword123"
-    }
-    response = client.post("/auth/signup", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-
-def test_signup_duplicate_email():
-    payload = {
-        "name": "Test User",
-        "email": "testuser@example.com",
-        "password": "anotherpass"
-    }
-    response = client.post("/auth/signup", json=payload)
-    assert response.status_code == 400
-    assert response.json()["detail"] == "User already exists"
-
-def test_successful_login():
+def test_successful_login(setup_test_user):
     payload = {
         "email": "testuser@example.com",
         "password": "securepassword123"
@@ -174,7 +167,7 @@ def test_successful_login():
     assert "access_token" in data
     assert data["token_type"] == "bearer"
 
-def test_login_wrong_password():
+def test_login_wrong_password(setup_test_user):
     payload = {
         "email": "testuser@example.com",
         "password": "wrongpassword"
@@ -191,5 +184,3 @@ def test_login_nonexistent_user():
     response = client.post("/auth/login", json=payload)
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"
-
-    """

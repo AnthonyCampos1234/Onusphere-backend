@@ -58,8 +58,15 @@ def add_new_member(payload: AddNewMember):
 
 @router.post("/login")
 def login(payload: Login):
-    account = Account.objects(email=payload.email).first()  # type: ignore
-    if not account or not verify_password(payload.password, account.hashed_password):
+    member = Member.objects(email=payload.email).first()  # type: ignore
+
+    if not member or not verify_password(payload.password, member.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"sub": str(account.id)})
+
+    token = create_access_token({"sub": str(member.id)})
+
     return {"access_token": token, "token_type": "bearer"}
+
+
+
+
