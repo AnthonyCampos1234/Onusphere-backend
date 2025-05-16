@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from bson import ObjectId
 
-from models.account import Account
+from models.types import Account
 from .auth import SECRET_KEY, ALGORITHM
 
 # OAuth2 password bearer token for FastAPI

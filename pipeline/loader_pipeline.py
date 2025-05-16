@@ -3,7 +3,7 @@ import os
 import threading
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from models.order import Order
+from models.types import Order
 from scripts.truck_loader.ingestion import create_customer_receipt
 from scripts.truck_loader.services import find_items_without_dimensions_from_order
 import shared_state

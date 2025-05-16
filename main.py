@@ -28,7 +28,7 @@ app.include_router(router)
 
 @app.on_event("startup")
 def startup_event():
-    print("🔄 Starting pipeline and Gmail listener...")
+    print("Starting pipeline and Gmail listener...")
     start_truck_loader_thread()
     start_gmail_listener_thread()
     print("Background services started.")

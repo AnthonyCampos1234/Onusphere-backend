@@ -1,11 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
-from models.account import Account
 from models.request_bodies import TriggerRequest
 from threading import Event
+from models.types import Account, Member, Customer, Order, OrderBatch, Item
 from shared_state import pipeline_trigger_event, email_data
-from models.customer import Customer
-from models.order import Order, OrderItem
-from models.item import Item
 from utils.dependencies import get_current_user
 from datetime import datetime
 from bson import ObjectId
@@ -63,8 +60,8 @@ def create_test_order(current_user: Account = Depends(get_current_user)):
 
     # Create order items
     order_items = [
-        OrderItem(item=item1, number_pallets=3),
-        OrderItem(item=item2, number_pallets=2)
+        OrderBatch(item=item1, number_pallets=3),
+        OrderBatch(item=item2, number_pallets=2)
     ]
 
     # Create the order with loading instructions

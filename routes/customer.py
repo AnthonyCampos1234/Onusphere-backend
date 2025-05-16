@@ -1,8 +1,4 @@
-from models import customer
-from models.order import Order, OrderItem
-from models.account import Account
-from models.customer import Customer
-from models.item import Item
+from models.types import Account, Member, Customer, Order, Item
 from utils.dependencies import get_current_user
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel

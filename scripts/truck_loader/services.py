@@ -1,6 +1,6 @@
 from typing import List
 from bson import ObjectId
-from models.order import Order
+from models.types import Order
 
 def find_items_without_dimensions_from_order(order_id) -> List:
     """
