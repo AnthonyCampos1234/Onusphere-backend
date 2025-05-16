@@ -5,7 +5,7 @@ import pytest
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from pipeline.truck_loader.pipeline import start_truck_loader_thread
+from pipeline.loader_pipeline import start_truck_loader_thread
 from models.order import Order
 from models.account import Account
 from models.customer import Customer

@@ -72,15 +72,15 @@ def test_create_order_with_embedded_items():
         customer=customer,
         items=[oi1, oi2],
         order_date=datetime(2025, 5, 5, 15, 30),
-        upcoming_shipment_times="7am, 9am"
+        upcoming_shipment_times=["7am, 9am"]
     )
     order.save()
 
-    fetched_order = Order.objects.get(id=order.id)
+    fetched_order = Order.objects.get(id=order.id) # type: ignore
     assert fetched_order.customer.name == "Order Buyer"
     assert len(fetched_order.items) == 2
     assert fetched_order.items[0].number_pallets == 2
-    assert fetched_order.upcoming_shipment_times == "7am, 9am"
+    assert fetched_order.upcoming_shipment_times == ["7am, 9am"]
 
 
 def test_orderitem_pallet_calculation():

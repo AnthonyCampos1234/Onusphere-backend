@@ -43,7 +43,7 @@ def test_find_items_without_dimensions_from_order():
     order = Order(
         items=[oi1, oi2, oi3],
         order_date=datetime.now(timezone.utc),
-        upcoming_shipment_times="9am, 1pm"
+        upcoming_shipment_times=["9am, 1pm"]
     ).save()
 
     # Step 4: Run the function

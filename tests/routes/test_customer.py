@@ -81,8 +81,11 @@ def account_customer_order():
         customer=customer,
         items=[order_item],
         order_date=datetime.now(timezone.utc),
-        upcoming_shipment_times="7am",
-        loading_instructions="None"
+        upcoming_shipment_times=["7am"],
+        loading_instructions={
+            "item_id": "555",
+            "instructions": "load special"
+        }
     ).save()
     return account, customer, order
 

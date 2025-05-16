@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config.db import connect_db
 from routes import router
 from scripts.listen_gmail import start_gmail_listener_thread
-from pipeline.truck_loader.pipeline import start_truck_loader_thread
+from pipeline.loader_pipeline import start_truck_loader_thread
 
 # Create FastAPI app
 app = FastAPI(title="Onusphere API", 
