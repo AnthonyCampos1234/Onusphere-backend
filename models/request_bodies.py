@@ -11,6 +11,13 @@ class CreateBusinessAccount(BaseModel):
     password: str
     phone: str
 
+class AddNewMember(BaseModel):
+    company_code: str
+    full_name: str
+    email: str
+    password: str
+    phone: str
+
 class Login(BaseModel):
     email: str
     password: str
