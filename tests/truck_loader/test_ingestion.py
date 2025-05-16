@@ -28,52 +28,52 @@ def db():
     disconnect()
 
 def test_parse_csv_valid():
-    # Create temporary CSV with valid data
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as tmp:
-        tmp.write("Item,Quantity\n")
-        tmp.write("123,5\n")
-        tmp.write("456,10\n")
-        tmp_path = tmp.name
-
-    try:
-        df = parse_csv(tmp_path)
-        assert isinstance(df, pd.DataFrame)
-        assert list(df.columns) == ["Item", "Quantity"]
-        assert df['Item'].dtype == object
-        assert df.iloc[0]['Item'] == '123'
-        assert df.iloc[1]['Quantity'] == 10
-    finally:
-        os.remove(tmp_path)
+    csv_content = b"Item,Quantity\n123,5\n456,10\n"
+    df = parse_csv(csv_content)
+    assert isinstance(df, pd.DataFrame)
+    assert list(df.columns) == ["Item", "Quantity"]
+    assert df['Item'].dtype == object
+    assert df.iloc[0]['Item'] == '123'
+    assert df.iloc[1]['Quantity'] == 10
 
 def test_parse_csv_empty_file():
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as tmp:
-        tmp_path = tmp.name
+    with pytest.raises(ValueError, match="Empty CSV content provided"):
+        parse_csv(b"")
 
-    try:
-        with pytest.raises(pd.errors.EmptyDataError):
-            parse_csv(tmp_path)
-    finally:
-        os.remove(tmp_path)
+def test_parse_csv_invalid_input_type():
+    csv_content = "Item,Quantity\n123,5\n456,10\n"  # intentionally wrong (str, not bytes)
 
-def test_parse_csv_invalid_path():
-    with pytest.raises(FileNotFoundError):
-        parse_csv("/path/does/not/exist.csv")
+    with pytest.raises(TypeError, match="Expected CSV data as bytes"):
+        parse_csv(csv_content)
 
 def test_parse_pdf():    
-    domain, date_ordered, units_per_pallet, special_instructions = parse_pdf("data/example_order.pdf")
+    # Load PDF as raw bytes
+    with open("data/example_order.pdf", "rb") as f:
+        pdf_bytes = f.read()
 
+    # Pass bytes directly to parse_pdf (it internally uses BytesIO correctly)
+    domain, date_ordered, units_per_pallet, special_instructions = parse_pdf(pdf_bytes)
+
+    assert domain == "shorr.com"
     assert len(special_instructions) == 6
     assert date_ordered == "11/18/24"
-    assert domain == "shorr.com"
     assert special_instructions[0]["item_id"] == "10126054"
     assert "Gaylords" in special_instructions[0]["instruction"]
     assert units_per_pallet[0]["item_id"] == "10202638"
     assert units_per_pallet[0]["units_per_pallet"] == 2400
 
 def test_create_order_reciept():
+    # Load PDF as raw bytes
+    with open("data/example_order.pdf", "rb") as f:
+        pdf_bytes = f.read()
+
+    # Load CSV as raw bytes
+    with open("data/example_order.csv", "rb") as f:
+        csv_bytes = f.read()
+
     email_data = {
-        "csv_file_path": "data/example_order.csv",
-        "pdf_file_path": "data/example_order.pdf",
+        "csv_file": csv_bytes,
+        "pdf_file": pdf_bytes, 
         "email_body": """Warehouse team- please have loaded for below times
 
                         7am
@@ -93,15 +93,16 @@ def test_create_order_reciept():
     assert order_data["customer_email_domain"] == "shorr.com"
     assert ObjectId.is_valid(order_data["order_id"]) # make sure order exists in DB
 
-    order = Order.objects(id=ObjectId(order_data["order_id"])).first()
+    order = Order.objects(id=ObjectId(order_data["order_id"])).first() # type: ignore
     assert order is not None, "Order was not found in the database"
 
     # Validate basic order fields
     assert len(order.items) > 0, "No order items found"
-    assert order.upcoming_shipment_times == "7am, 9am, 11am, 11am, 1pm"
+    assert order.upcoming_shipment_times == ["7am", "9am", "11am", "11am", "1pm"]
 
     # Validate item-level data (example for the first item)
     item = order.items[0]
     assert item.item.item_number == "10202638"
     assert len(item.item.special_instructions) == 0
     assert item.number_pallets > 0
+

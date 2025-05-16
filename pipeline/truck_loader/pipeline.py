@@ -23,7 +23,6 @@ def start_truck_loader_thread():
                 if order_id:
                     run_pipeline_on_state(order_id)
                 else:
-                    print("Running pipeline on email", )
                     order_id = run_pipline_on_email(shared_state.email_data)
 
                 # send_email(order_id)

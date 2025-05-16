@@ -6,6 +6,7 @@ import re
 from typing import List
 import json
 import os
+from io import BytesIO
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -15,41 +16,22 @@ from models.order import Order, OrderItem
 from models.item import Item
 
 
-def parse_csv(file_path: str):
-    """
-    Parse a CSV file into a DataFrame.
+def parse_csv(csv_bytes: bytes) -> pd.DataFrame:
+    if not isinstance(csv_bytes, (bytes, bytearray)):
+        raise TypeError("Expected CSV data as bytes")
+    if not csv_bytes:
+        raise ValueError("Empty CSV content provided")
+    return pd.read_csv(BytesIO(csv_bytes), dtype={'Item': str})
 
-    Args:
-        file_path (str): Path to the CSV file.
-
-    Returns:
-        DataFrame: Parsed DataFrame.
-    """
-
-    df = pd.read_csv(file_path)
-
-    df['Item'] = df['Item'].astype(str)
-
-    return df
-
-def extract_domain_from_pdf(pdf_path):
-    """
-    Extracts the first domain (e.g., 'shorr.com') found in the PDF.
-
-    Args:
-        pdf_path (str): Path to the PDF file.
-
-    Returns:
-        str: The domain found (e.g., 'shorr.com') or 'unknown'.
-    """
-    with pdfplumber.open(pdf_path) as pdf:
+def extract_domain_from_pdf(pdf_bytes):
+    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
         first_page_text = pdf.pages[0].extract_text()
         match = re.search(r"\b(?:www\.)?([a-z0-9\-]+\.[a-z]{2,})\b", first_page_text, re.IGNORECASE)
         if match:
             return match.group(1).lower()
     return "unknown"
 
-def extract_date_ordered_from_pdf(pdf_path):
+def extract_date_ordered_from_pdf(pdf_bytes):
     """
     Extracts the order acknowledgment date from the PDF.
 
@@ -59,7 +41,7 @@ def extract_date_ordered_from_pdf(pdf_path):
     Returns:
         str: The date in MM/DD/YY format, or 'unknown' if not found.
     """
-    with pdfplumber.open(pdf_path) as pdf:
+    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
 
@@ -74,7 +56,7 @@ def extract_date_ordered_from_pdf(pdf_path):
 
     return "unknown"
 
-def extract_units_per_pallet_from_pdf(pdf_path):
+def extract_units_per_pallet_from_pdf(pdf_bytes):
     """
     Extracts item_id and units_per_pallet from Shorr Packaging PDF.
     Returns:
@@ -83,7 +65,7 @@ def extract_units_per_pallet_from_pdf(pdf_path):
     results = []
     current_item_id = None
 
-    with pdfplumber.open(pdf_path) as pdf:
+    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
             lines = page.extract_text().splitlines()
 
@@ -161,7 +143,7 @@ def extract_special_instructions(parsed_text: str):
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse OpenAI response: {response_text}") from e
 
-def parse_pdf_for_special_instructions(pdf_path: str):
+def parse_pdf_for_special_instructions(pdf_bytes):
     """
     Extracts special handling instructions from the first page of a PDF.
 
@@ -171,15 +153,15 @@ def parse_pdf_for_special_instructions(pdf_path: str):
     Returns:
         list of dicts: Each dict has 'item_id' and 'instruction'.
     """
-    with pdfplumber.open(pdf_path) as pdf:
+    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
         first_page_text = pdf.pages[0].extract_text()
     return extract_special_instructions(first_page_text)
 
-def parse_pdf(filePath):
-  domain = extract_domain_from_pdf(filePath)
-  date_ordered = extract_date_ordered_from_pdf(filePath)
-  units_per_pallet = extract_units_per_pallet_from_pdf(filePath)
-  special_instructions = parse_pdf_for_special_instructions(filePath)
+def parse_pdf(pdf_bytes):
+  domain = extract_domain_from_pdf(pdf_bytes)
+  date_ordered = extract_date_ordered_from_pdf(pdf_bytes)
+  units_per_pallet = extract_units_per_pallet_from_pdf(pdf_bytes)
+  special_instructions = parse_pdf_for_special_instructions(pdf_bytes)
 
   return domain, date_ordered, units_per_pallet, special_instructions
 
@@ -286,7 +268,7 @@ def add_new_items_from_df(df) -> list:
         item_number = row["Item"]
 
         # Skip if item already exists
-        if Item.objects(item_number=item_number).first():
+        if Item.objects(item_number=item_number).first(): # type: ignore
             continue
 
         # Create and save new item
@@ -312,9 +294,10 @@ def create_customer_receipt(email_data: dict):
         Returns:
             CustomerOrderReceipt: An object containing complete customer order details.
         """
+
     # Step 1: Parse CSV and PDF
-    df = parse_csv(email_data["csv_file_path"])
-    domain, date_ordered, units_per_pallet, special_instructions = parse_pdf(email_data["pdf_file_path"])
+    df = parse_csv(email_data["csv_file"])
+    domain, date_ordered, units_per_pallet, special_instructions = parse_pdf(email_data["pdf_file"])
 
     # Step 2: Combine instructions into DataFrame
     final_df = finalize_df(df, special_instructions, units_per_pallet)
@@ -323,10 +306,10 @@ def create_customer_receipt(email_data: dict):
     add_new_items_from_df(final_df)
 
     # Step 4: Extract upcoming shipment times
-    upcoming_shipment_times = ", ".join(get_upcoming_shipments(email_data["email_body"]))
+    upcoming_shipment_times = get_upcoming_shipments(email_data["email_body"])
 
     # Step 5: Lookup or create Customer
-    customer = Customer.objects(email_domain=domain).first()
+    customer = Customer.objects(email_domain=domain).first() # type: ignore
     if not customer:
         customer = Customer(email_domain=domain)
         customer.save()
@@ -334,7 +317,7 @@ def create_customer_receipt(email_data: dict):
     # Step 6: Convert DataFrame rows to OrderItems
     order_items = []
     for _, row in final_df.iterrows():
-        item = Item.objects(item_number=row["Item"]).first()
+        item = Item.objects(item_number=row["Item"]).first() # type: ignore
         if not item:
             continue  # Skip if item not found
 
@@ -360,7 +343,7 @@ def create_customer_receipt(email_data: dict):
 
     return {
         "customer_email_domain": customer.email_domain,
-        "order_id": str(order.id),
+        "order_id": str(order.pk),
     }
   
 

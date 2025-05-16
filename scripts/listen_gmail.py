@@ -1,7 +1,6 @@
 import os
 import json
 import base64
-import time
 import threading
 
 from google.cloud import pubsub_v1
@@ -10,6 +9,8 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from email import policy
+from email.parser import BytesParser
 from dotenv import load_dotenv
 import shared_state
 
@@ -101,6 +102,51 @@ def get_email_body(payload, preferred_type='text/plain'):
     
     return None
 
+def extract_plain_text(message):
+    """Extract plain text body from a message."""
+    def get_text_from_parts(parts):
+        text = ''
+        for part in parts:
+            if part.get('mimeType') == 'text/plain':
+                data = part['body'].get('data')
+                if data:
+                    decoded_text = base64.urlsafe_b64decode(data).decode('utf-8', errors='replace')
+                    text += decoded_text
+            elif part.get('mimeType', '').startswith('multipart/'):
+                if 'parts' in part:
+                    text += get_text_from_parts(part['parts'])
+        return text
+
+    if 'parts' in message['payload']:
+        return get_text_from_parts(message['payload']['parts']).strip()
+    else:
+        # Single part message
+        if message['payload'].get('mimeType') == 'text/plain':
+            data = message['payload']['body'].get('data')
+            if data:
+                return base64.urlsafe_b64decode(data).decode('utf-8', errors='replace').strip()
+    
+    return ''
+
+def extract_email_metadata(message):
+    headers = {header['name'].lower(): header['value'] for header in message['payload'].get('headers', [])}
+    
+    subject = headers.get('subject', '')
+    sender = headers.get('from', '')
+    recipient = headers.get('to', '')
+    date = headers.get('date', '')
+    
+    body = extract_plain_text(message)
+    
+    return {
+        'subject': subject,
+        'from': sender,
+        'to': recipient,
+        'date': date,
+        'body': body
+    }
+
+
 def process_message(service, msg_id):
     """
     Process a single email message
@@ -112,26 +158,21 @@ def process_message(service, msg_id):
     Returns:
         Dict containing email details (subject, body, etc.)
     """
-    email_data = {}
-    
-    # Get the full message details
+
     message = service.users().messages().get(userId='me', id=msg_id, format='full').execute()
     
-    # Process headers
-    headers = message['payload'].get('headers', [])
-    email_data['subject'] = next((h['value'] for h in headers if h['name'].lower() == 'subject'), '(No Subject)')
-    email_data['from'] = next((h['value'] for h in headers if h['name'].lower() == 'from'), '(Unknown Sender)')
-    email_data['to'] = next((h['value'] for h in headers if h['name'].lower() == 'to'), '(Unknown Recipient)')
-    email_data['date'] = next((h['value'] for h in headers if h['name'].lower() == 'date'), '(Unknown Date)')
-    
-    # Extract body - try plain text first, then HTML
-    email_data['body'] = get_email_body(message['payload'])
-    
-    # Extract attachments
-    email_data['attachments'] = []
     attachments = get_attachments(service, 'me', message)
-    if attachments:
-        email_data['attachments'] = attachments
+    email_metadata = extract_email_metadata(message)
+    
+    email_data = {
+        "csv_file": next((a['data'] for a in attachments if a['filename'].lower().endswith('.csv')), None),
+        "pdf_file": next((a['data'] for a in attachments if a['filename'].lower().endswith('.pdf')), None),
+        "subject": email_metadata['subject'],
+        "from": email_metadata['from'],
+        "to": email_metadata['to'],
+        "date": email_metadata['date'],
+        "email_body": email_metadata['body']
+    }
     
     return email_data
 
@@ -264,72 +305,70 @@ def get_attachments(service, user_id, message):
     return attachments
 
 def handle_parsed_email(email_data):
-    print("Triggering truck loader pipeline")
-
-    print(email_data)
-    shared_state.email_data = email_data 
+    shared_state.email_data = email_data
     shared_state.order_id_holder["id"] = None
     
     shared_state.pipeline_trigger_event.set()
 
+
 def process_gmail_event(service, new_history_id):
     global last_processed_history_id
 
-    # Get the most recent email instead of using history
     try:
-        # Get the list of messages in the inbox
+        # Get the most recent email in INBOX
         results = service.users().messages().list(
             userId='me',
             labelIds=['INBOX'],
-            maxResults=1  # Get only the most recent message
+            maxResults=1
         ).execute()
         
         messages = results.get('messages', [])
-        
         if not messages:
             print("No recent messages found in inbox.")
             return
         
-        # Process only the most recent message
         msg_id = messages[0]['id']
-        
-        # Skip if we've already processed this message
         if msg_id in processed_message_ids:
             print(f"Message {msg_id} already processed, skipping.")
             return
         
         processed_message_ids.add(msg_id)
         
-        # Process the full message
         print(f"Processing latest message with ID: {msg_id}")
         email_data = process_message(service, msg_id)
-        
+
+        # Handle the parsed email data (trigger downstream pipeline, etc.)
         handle_parsed_email(email_data)
-        
+
+        # ✅ Print metadata
         print(f"\nNew Email - Subject: {email_data['subject']}")
         print(f"From: {email_data['from']}")
         print(f"To: {email_data['to']}")
         print(f"Date: {email_data['date']}")
         
-        if email_data['body']:
-            # Print a preview of the body (first 200 chars)
-            preview = email_data['body'][:200] + ('...' if len(email_data['body']) > 200 else '')
+        # ✅ Print body preview
+        if email_data['email_body']:
+            preview = email_data['email_body'][:200] + ('...' if len(email_data['email_body']) > 200 else '')
             print(f"Body Preview:\n{preview}\n")
         else:
             print("⚠ No body found.")
-        
-        # Report on attachments
-        if email_data['attachments']:
-            print(f"Found {len(email_data['attachments'])} attachments:")
-            for att in email_data['attachments']:
-                print(f"  - {att['filename']} ({att['mime_type']}, {att['size']} bytes)")
-        else:
-            print("⚠ No attachments found.")
-        
-        # Update the history ID after successful processing
+
+        # ✅ Print attachments
+        attachments_found = []
+        if email_data.get('csv_file'):
+            attachments_found.append('CSV')
+            print(f"✔ Found CSV attachment ({len(email_data['csv_file'])} bytes)")
+        if email_data.get('pdf_file'):
+            attachments_found.append('PDF')
+            print(f"✔ Found PDF attachment ({len(email_data['pdf_file'])} bytes)")
+
+        if not attachments_found:
+            print("⚠ No CSV or PDF attachments found.")
+
+        # ✅ Update last processed history ID
         last_processed_history_id = new_history_id
         print(f"Updated last processed historyId: {new_history_id}")
-        
+    
     except Exception as e:
         print(f"Error processing latest message: {e}")
         import traceback
@@ -402,7 +441,5 @@ def start_pubsub_listener():
 
 # --- Run the listener
 def start_gmail_listener_thread():
-    try:
-        start_pubsub_listener()
-    except Exception as e:
-        print(f"Gmail Listener fatal error: {e}")
+    thread = threading.Thread(target=start_pubsub_listener, daemon=True)
+    thread.start()
