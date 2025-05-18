@@ -100,9 +100,8 @@ def account_customer_order():
     ).save()
 
     order_batch = OrderBatch(
-        item_ids=[item],
-        number_pallets=3,
-        order_date=datetime.now().date()
+        item_id=item,
+        number_pallets=3
     ).save()
 
     order = Order(
@@ -132,12 +131,12 @@ def test_get_customer_orders(account_customer_order):
     order_batch = data[0]["order_batches"][0]
     assert order_batch["number_pallets"] == 3
 
-    assert "items" in order_batch
-    assert len(order_batch["items"]) == 1
-    assert "item_id" in order_batch["items"][0]
-    assert "item_number" in order_batch["items"][0]
-    assert "description" in order_batch["items"][0]
-    assert "units_per_pallet" in order_batch["items"][0]
+    assert "item" in order_batch
+    item = order_batch["item"]
+    assert "item_id" in item
+    assert "item_number" in item
+    assert "description" in item
+    assert "units_per_pallet" in item
 
     app.dependency_overrides = {}
 

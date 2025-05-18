@@ -43,25 +43,23 @@ def get_orders_from_customer(id: str, current_user: Account = Depends(get_curren
                 {
                     "order_batch_id": str(ob.id),
                     "number_pallets": ob.number_pallets,
-                    "items": [
-                        {
-                            "item_id": str(item.id),
-                            "item_number": item.item_number,
-                            "description": item.description,
-                            "units_per_pallet": item.units_per_pallet
-                        }
-                        for item in ob.item_ids
-                    ]
+                    "item": {
+                        "item_id": str(ob.item_id.id),
+                        "item_number": ob.item_id.item_number,
+                        "description": ob.item_id.description,
+                        "units_per_pallet": ob.item_id.units_per_pallet
+                    } if ob.item_id else None
                 }
                 for ob in order.order_item_ids
             ],
             "order_date": order.order_date.isoformat(),
             "shipment_times": order.shipment_times,
             "status": order.status,
-            "loading_instructions": order.loading_instructions
+            "loading_instructions": order.loading_instructions or []
         }
 
     return [serialize_order(order) for order in orders]
+
 
 @router.post("/")
 def create_customer(customer_data: CreateCustomerRequest, current_user: Account = Depends(get_current_user)):

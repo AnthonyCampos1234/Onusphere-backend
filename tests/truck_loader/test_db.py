@@ -78,9 +78,8 @@ def test_create_orderbatch_with_pallet_calc():
     ).save()
 
     batch = OrderBatch(
-        item_ids=[item],
-        number_pallets=0,  # Will be set dynamically
-        order_date=date(2025, 5, 5)
+        item_id=item,
+        number_pallets=0
     )
     batch.set_pallets(order_quantity=120, units_per_pallet=40)
     batch.save()
@@ -97,15 +96,13 @@ def test_create_order_linked_all():
 
     # Create batches
     batch1 = OrderBatch(
-        item_ids=[item1],
-        number_pallets=2,
-        order_date=date(2025, 5, 6)
+        item_id=item1,
+        number_pallets=2
     ).save()
 
     batch2 = OrderBatch(
-        item_ids=[item2],
-        number_pallets=4,
-        order_date=date(2025, 5, 6)
+        item_id=item2,
+        number_pallets=4
     ).save()
 
     order = Order(

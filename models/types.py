@@ -27,7 +27,7 @@ class Member(Document):
 class Customer(Document):
     date_created = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
     account = fields.ReferenceField(Account, required=True)
-    name = fields.StringField(required=True)
+    name = fields.StringField()
     email_domain = fields.StringField(required=True)
 
 
@@ -38,16 +38,15 @@ class Item(Document):
     width = fields.FloatField(required=True)
     length = fields.FloatField(required=True)
     special_instructions = fields.StringField(required=True)
-    description = fields.StringField(required=True)
+    description = fields.StringField()
     units_per_pallet = fields.IntField(required=True)
 
 
 # ===== OrderBatch =====
 class OrderBatch(Document):
     date_created = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
-    item_ids = fields.ListField(fields.ReferenceField(Item), required=True)
+    item_id = fields.ReferenceField(Item, required=True)
     number_pallets = fields.IntField(required=True)
-    order_date = fields.DateField(required=True)
 
     @staticmethod
     def calculate_pallets(order_quantity, units_per_pallet):

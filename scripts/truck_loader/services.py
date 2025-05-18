@@ -15,8 +15,9 @@ def find_items_without_dimensions_from_order(order_id) -> List[str]:
     missing_items = []
 
     for order_batch in order.order_item_ids:
-        for item in order_batch.item_ids:
-            if not item or not all([item.height > 0, item.width > 0, item.length > 0]):
-                missing_items.append(item.item_number if item else "Unknown Item")
+        item = order_batch.item_id
+        if not item or not all([item.height > 0, item.width > 0, item.length > 0]):
+            missing_items.append(item.item_number if item else "Unknown Item")
 
     return missing_items
+

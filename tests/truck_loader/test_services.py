@@ -63,9 +63,9 @@ def test_find_items_without_dimensions_from_order():
         units_per_pallet=0
     ).save()
 
-    oi1 = OrderBatch(item_ids=[item_with_dims], number_pallets=1, order_date=datetime.now().date()).save()
-    oi2 = OrderBatch(item_ids=[item_missing_dims], number_pallets=2, order_date=datetime.now().date()).save()
-    oi3 = OrderBatch(item_ids=[item_none_dims], number_pallets=3, order_date=datetime.now().date()).save()
+    oi1 = OrderBatch(item_id=item_with_dims, number_pallets=1).save()
+    oi2 = OrderBatch(item_id=item_missing_dims, number_pallets=2).save()
+    oi3 = OrderBatch(item_id=item_none_dims, number_pallets=3).save()
 
     order = Order(
         customer=customer, 

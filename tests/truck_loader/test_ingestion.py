@@ -5,7 +5,7 @@ from bson import ObjectId
 import pandas as pd
 import pytest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from models.types import Customer, Order, Item
+from models.types import Customer, Order, Item, Account, OrderBatch
 from scripts.truck_loader.ingestion import create_customer_receipt, parse_csv, parse_pdf
 from mongoengine import connect, disconnect
 
@@ -20,9 +20,11 @@ def db():
         uuidRepresentation='standard'
     )
     yield
+    Account.drop_collection()
     Item.drop_collection()
     Customer.drop_collection()
     Order.drop_collection()
+    OrderBatch.drop_collection()
     disconnect()
 
 def test_parse_csv_valid():
@@ -64,14 +66,16 @@ def test_create_order_reciept():
     # Load PDF as raw bytes
     with open("data/example_order.pdf", "rb") as f:
         pdf_bytes = f.read()
-
     # Load CSV as raw bytes
     with open("data/example_order.csv", "rb") as f:
         csv_bytes = f.read()
 
+    account = Account(email="test@gmail.com", name="account", company_code="ABCG").save()
+
     email_data = {
         "csv_file": csv_bytes,
         "pdf_file": pdf_bytes, 
+        "subject": account.company_code, 
         "email_body": """Warehouse team- please have loaded for below times
 
                         7am
@@ -102,7 +106,7 @@ def test_create_order_reciept():
 
     # Validate item-level data (check first OrderBatch and its Item)
     order_batch = order.order_item_ids[0]
-    item = order_batch.item_ids[0]
+    item = order_batch.item_id
 
     assert item.item_number == "10202638"
     assert len(item.special_instructions) == 0

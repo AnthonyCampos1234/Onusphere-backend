@@ -11,7 +11,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
 import pdfplumber
-from models.types import Customer, Order, OrderBatch, Item
+from models.types import Account, Customer, Order, OrderBatch, Item
 
 
 def parse_csv(csv_bytes: bytes) -> pd.DataFrame:
@@ -272,10 +272,11 @@ def add_new_items_from_df(df) -> list:
         # Create and save new item
         item = Item(
             item_number=item_number,
-            height=row.get("Height", 0.0),
-            width=row.get("Width", 0.0),
-            length=row.get("Length", 0.0),
-            special_instructions=row.get("SpecialInstructions", "")
+            height=0.0,
+            width=0.0,
+            length=0.0,
+            special_instructions=row.get("SpecialInstructions", ""),
+            units_per_pallet=row.get("Units_Per_Pallet")
         )
         item.save()
 
@@ -304,28 +305,33 @@ def create_customer_receipt(email_data: dict):
     add_new_items_from_df(final_df)
 
     # Step 4: Extract upcoming shipment times
-    upcoming_shipment_times = get_upcoming_shipments(email_data["email_body"])
+    shipment_times = get_upcoming_shipments(email_data["email_body"])
 
     # Step 5: Lookup or create Customer
-    customer = Customer.objects(email_domain=domain).first() # type: ignore
+    # Find account that is linked to the company code
+    account = Account.objects(company_code=email_data["subject"]).first() # type: ignore
+
+    customer = Customer.objects(account=account, email_domain=domain).first() # type: ignore
     if not customer:
-        customer = Customer(email_domain=domain)
+        customer = Customer(account=account, email_domain=domain)
         customer.save()
 
-    # Step 6: Convert DataFrame rows to OrderItems
+    # Step 6: Convert DataFrame rows to OrderBatch
     order_items = []
     for _, row in final_df.iterrows():
+        
+        # Get quantity and units_per_pallet from the row
+        order_quantity = int(row.get("Qty_Ord", 0))
+        units_per_pallet = int(row.get("Units_Per_Pallet", 1))
+
         item = Item.objects(item_number=row["Item"]).first() # type: ignore
         if not item:
             continue  # Skip if item not found
 
-        # Get quantity and units_per_pallet from the row
-        order_quantity = int(row.get("Qty_Ord", 0))  # Adjust key name as needed
-        units_per_pallet = int(row.get("Units_Per_Pallet", 1))  # Adjust key name as needed
-
         # Create OrderItem and calculate pallets
-        order_item = OrderItem(item=item, number_pallets=0)
+        order_item = OrderBatch(item_id=item.id, number_pallets=0)
         order_item.set_pallets(order_quantity, units_per_pallet)
+        order_item.save()
 
         order_items.append(order_item)
 
@@ -333,9 +339,10 @@ def create_customer_receipt(email_data: dict):
     # Step 7: Create and save the Order
     order = Order(
         customer=customer,
-        items=order_items,
+        order_item_ids=order_items,
         order_date=pd.to_datetime(date_ordered),
-        upcoming_shipment_times=upcoming_shipment_times
+        shipment_times=shipment_times,
+        status="processing"
     )
     order.save()
 
