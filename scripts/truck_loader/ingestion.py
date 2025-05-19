@@ -342,7 +342,8 @@ def create_customer_receipt(email_data: dict):
         order_item_ids=order_items,
         order_date=pd.to_datetime(date_ordered),
         shipment_times=shipment_times,
-        status="processing"
+        status="processing",
+        loading_instructions=None
     )
     order.save()
 

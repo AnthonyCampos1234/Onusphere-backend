@@ -64,6 +64,6 @@ class Order(Document):
     order_item_ids = fields.ListField(fields.ReferenceField(OrderBatch), required=True)
     order_date = fields.DateField(required=True)
     shipment_times = fields.ListField(fields.StringField(), required=True)
-    status = fields.StringField(choices=("processing", "done"))
-    loading_instructions = fields.ListField(fields.StringField())  # nullable, default None
+    status = fields.StringField(choices=("incomplete", "done"))
+    loading_instructions = fields.ListField(fields.StringField(), null=True, default=None)
 

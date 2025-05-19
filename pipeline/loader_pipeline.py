@@ -43,14 +43,20 @@ def run_pipline_on_email(email_data):
     # Compare against to DB/master sheet and identify new items
     missing_items = find_items_without_dimensions_from_order(order_id)
 
-    #if not missing_items:
-    # Pass all requirements to the truck loader
-    response = "sample truck load"
-    print("updating db...")
-    # Update DB with the instructions
-    Order.objects(id=order_id).update_one(set__loading_instructions=response) # type: ignore
-    print("updated db")
-    return order_id
+    if not missing_items:
+        # Pass all requirements to the truck loader
+        response = ["img1", "img2", "img3", "img4"]
+
+        Order.objects(id=order_id).update_one(
+            set__loading_instructions=response,
+            set__status="done"
+        )
+
+        return order_id
+
+    Order.objects(id=order_id).update_one(set__status="incomplete")
+
+    return None
 
 
 def run_pipeline_on_state(order_id):
@@ -59,8 +65,15 @@ def run_pipeline_on_state(order_id):
 
     if not missing_items:
         # Pass all requirements to the truck loader
-        response = "sample truck load"
+        response = ["img1", "img2", "img3", "img4"]
 
-        # Update DB with the instructions
-        Order.objects(id=order_id).update_one(set__loading_instructions=response) # type: ignore
+        Order.objects(id=order_id).update_one(
+            set__loading_instructions=response,
+            set__status="done"
+        )
+
+        return order_id
+
+    Order.objects(id=order_id).update_one(set__status="incomplete")
+    return None
 

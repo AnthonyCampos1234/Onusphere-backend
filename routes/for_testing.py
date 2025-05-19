@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, UploadFile, File, Form, Depends
 from models.request_bodies import TriggerRequest
 from threading import Event
 from models.types import Account, Member, Customer, Order, OrderBatch, Item
@@ -6,19 +6,33 @@ from shared_state import pipeline_trigger_event, email_data
 from utils.dependencies import get_current_user
 from datetime import datetime
 from bson import ObjectId
+import shared_state
 
 router = APIRouter()
 
 @router.post("/email-trigger")
-async def trigger_pipeline(request: Request):
-    payload = await request.json()
-    email = request.headers.get("email")
-    if email:
-        account = Account.objects(email=email).first()  # type: ignore
-        if account:
-            email_data = payload
-            return {"status": "Pipeline triggered"}
-    raise HTTPException(status_code=400, detail="Email header missing or invalid")
+async def trigger_pipeline(
+    csv_file: UploadFile = File(...),
+    pdf_file: UploadFile = File(...),
+    subject: str = Form(...),
+    email_body: str = Form(...)
+):
+    csv_bytes = await csv_file.read()
+    pdf_bytes = await pdf_file.read()
+
+    email_data = {
+        "csv_file": csv_bytes,
+        "pdf_file": pdf_bytes,
+        "subject": subject,
+        "email_body": email_body
+    }
+
+    shared_state.email_data = email_data
+    shared_state.order_id_holder["id"] = None
+    shared_state.pipeline_trigger_event.set()
+
+    return {"status": "Pipeline triggered"}
+
 
 @router.post("/pipeline-trigger")
 def email_trigger(payload: TriggerRequest):
