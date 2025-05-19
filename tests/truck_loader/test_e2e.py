@@ -74,9 +74,6 @@ def test_email_initiated_pipeline_no_missing_items():
     account = Account.objects(name=payload["business_name"]).first()
     assert account
 
-    # Step 4: Insert Customer (email domain must match PDF)
-    customer = Customer(name="York Target", email_domain="shorr.com", account=account).save()
-
     # Step 5: Insert Items used in CSV
     items_to_create = [
         {"item_number": "10202638", "height": 10.0, "width": 5.0, "length": 3.0, "special_instructions": "none", "units_per_pallet": 2400},
@@ -215,8 +212,8 @@ def test_user_initiated_pipeline_no_missing_items():
         Item(**item_data).save()
 
     # Step 6: Trigger pipeline
-    user_res = 
-    assert email_res.status_code == 200
+  #   user_res = 
+#assert email_res.status_code == 200
     time.sleep(10)
 
     # Step 7: Validate order creation

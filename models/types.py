@@ -53,9 +53,10 @@ class OrderBatch(Document):
         if units_per_pallet <= 0:
             raise ValueError("Units per pallet must be greater than zero.")
         return max(1, -(-order_quantity // units_per_pallet))  # Ceiling division
-    
+
     def set_pallets(self, order_quantity, units_per_pallet):
         self.number_pallets = self.calculate_pallets(order_quantity, units_per_pallet)
+
 
 # ===== Order =====
 class Order(Document):
@@ -64,6 +65,6 @@ class Order(Document):
     order_item_ids = fields.ListField(fields.ReferenceField(OrderBatch), required=True)
     order_date = fields.DateField(required=True)
     shipment_times = fields.ListField(fields.StringField(), required=True)
-    status = fields.StringField(choices=("incomplete", "done"))
+    status = fields.StringField(choices=("incomplete", "processing", "done"))
     loading_instructions = fields.ListField(fields.StringField(), null=True, default=None)
 

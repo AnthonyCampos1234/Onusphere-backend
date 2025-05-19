@@ -45,7 +45,7 @@ def test_get_all_customers(account_and_customers):
     account, customers = account_and_customers
     app.dependency_overrides[get_current_user] = lambda: account
 
-    response = client.get("/customers")
+    response = client.get("/customer")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
@@ -58,7 +58,7 @@ def test_get_single_customer(account_and_customers):
     app.dependency_overrides[get_current_user] = lambda: account
 
     customer_id = str(customers[0].id)
-    response = client.get(f"/customers/{customer_id}")
+    response = client.get(f"/customer/{customer_id}")
     assert response.status_code == 200
     assert response.json()["name"] == customers[0].name
 
@@ -68,7 +68,7 @@ def test_get_customer_not_found(account_and_customers):
     account, _ = account_and_customers
     app.dependency_overrides[get_current_user] = lambda: account
 
-    response = client.get("/customers/000000000000000000000000")  # non-existent ID
+    response = client.get("/customer/000000000000000000000000")  # non-existent ID
     assert response.status_code == 404
 
     app.dependency_overrides = {}
@@ -119,7 +119,7 @@ def test_get_customer_orders(account_customer_order):
     account, customer, order = account_customer_order
     app.dependency_overrides[get_current_user] = lambda: account
 
-    response = client.get(f"/customers/{customer.id}/orders")
+    response = client.get(f"/customer/{customer.id}/orders")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -144,6 +144,6 @@ def test_get_orders_invalid_customer(account_customer_order):
     account, _, _ = account_customer_order
     app.dependency_overrides[get_current_user] = lambda: account
 
-    response = client.get("/customers/000000000000000000000000/orders")
+    response = client.get("/customer/000000000000000000000000/orders")
     assert response.status_code == 404
 
