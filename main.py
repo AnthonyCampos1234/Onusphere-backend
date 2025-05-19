@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from config.db import connect_db
 from routes import router
 from scripts.listen_gmail import start_gmail_listener_thread
@@ -35,5 +35,5 @@ def startup_event():
 
 # Run with: uvicorn main:app --reload
 if __name__ == "__main__":
-    import uvicorn
+    import uvicorn # type: ignore
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException # type: ignore
+from pydantic import BaseModel, Field # type: ignore
 from models.types import Item
 
 router = APIRouter()

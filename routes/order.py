@@ -1,5 +1,5 @@
 from models.types import Order
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException # type: ignore
 
 router = APIRouter()
 
