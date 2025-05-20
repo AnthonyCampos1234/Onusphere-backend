@@ -305,11 +305,14 @@ def get_attachments(service, user_id, message):
     return attachments
 
 def handle_parsed_email(email_data):
+    if not (email_data.get("csv_file") or email_data.get("pdf_file")):
+        print("Skipping email: No CSV or PDF attachments.")
+        return
+
     shared_state.email_data = email_data
     shared_state.order_id_holder["id"] = None
-    
     shared_state.pipeline_trigger_event.set()
-
+    print("Email with attachment processed.")
 
 def process_gmail_event(service, new_history_id):
     global last_processed_history_id
