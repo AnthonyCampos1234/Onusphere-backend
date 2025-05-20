@@ -30,7 +30,7 @@ app.include_router(router)
 def startup_event():
     print("Starting pipeline and Gmail listener...")
     start_truck_loader_thread()
-    # start_gmail_listener_thread()
+    start_gmail_listener_thread()
     print("Background services started.")
 
 # Run with: uvicorn main:app --reload
