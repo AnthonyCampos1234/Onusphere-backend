@@ -104,7 +104,6 @@ def create_customer(customer_data: CreateCustomerRequest, current_user: Member =
         "name": customer.name,
         "email_domain": customer.email_domain,
     }
-<<<<<<< HEAD
 
 @router.post("/{id}/update-name")
 def update_customer_name(
@@ -115,11 +114,8 @@ def update_customer_name(
     customer = Customer.objects(id=id, account=current_user.account).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    
+
     customer.name = new_name
     customer.save()
 
     return {"id": str(customer.id), "name": customer.name}
-
-=======
->>>>>>> 8f5dcdd
