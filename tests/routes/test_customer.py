@@ -1,4 +1,3 @@
-
 import sys
 import os
 import uuid
@@ -170,6 +169,42 @@ def test_create_customer_missing_field(account_and_customers):
 
     response = client.post("/customer", json=payload)
     assert response.status_code == 422
+
+    app.dependency_overrides = {}
+
+def test_update_customer_name(account_and_customers):
+    account, customers = account_and_customers
+    customer = customers[0]
+
+    from types import SimpleNamespace
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)
+
+    payload = "Updated Customer Name"
+    response = client.post(
+        f"/customer/{customer.id}/update-name",
+        json=payload
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Updated Customer Name"
+
+    # Confirm it's updated in DB
+    updated = Customer.objects(id=customer.id).first()
+    assert updated.name == "Updated Customer Name"
+
+    app.dependency_overrides = {}
+
+def test_update_customer_name_not_found(account_and_customers):
+    account, _ = account_and_customers
+    from types import SimpleNamespace
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)
+
+    response = client.post(
+        "/customer/000000000000000000000000/update-name",
+        json="New Name"
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Customer not found"
 
     app.dependency_overrides = {}
 

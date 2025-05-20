@@ -1,6 +1,6 @@
 from models.types import Account, Member, Customer, Order, Item
 from utils.dependencies import get_current_user
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -67,4 +67,19 @@ def create_customer(customer_data: CreateCustomerRequest, current_user: Member =
         "name": customer.name,
         "email_domain": customer.email_domain,
     }
+
+@router.post("/{id}/update-name")
+def update_customer_name(
+    id: str,
+    new_name: str = Body(...),
+    current_user: Member = Depends(get_current_user)
+):
+    customer = Customer.objects(id=id, account=current_user.account).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    customer.name = new_name
+    customer.save()
+
+    return {"id": str(customer.id), "name": customer.name}
 
