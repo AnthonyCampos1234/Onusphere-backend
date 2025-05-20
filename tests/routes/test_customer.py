@@ -117,6 +117,43 @@ def test_get_customer_not_found(account_and_customers):
 
     app.dependency_overrides = {}
 
+
+def test_get_customer_orders(account_customer_order):
+    account, customer, order = account_customer_order
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)
+
+    response = client.get(f"/customer/{customer.id}/orders")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == str(order.pk)
+
+    assert "order_batches" in data[0]
+    assert len(data[0]["order_batches"]) == 1
+
+    order_batch = data[0]["order_batches"][0]
+    assert order_batch["number_pallets"] == 3
+
+    assert "item" in order_batch
+    item = order_batch["item"]
+    assert "item_id" in item
+    assert "item_number" in item
+    assert "description" in item
+    assert "units_per_pallet" in item
+
+    app.dependency_overrides = {}
+
+
+def test_get_orders_invalid_customer(account_customer_order):
+    account, _, _ = account_customer_order
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)
+
+    response = client.get("/customer/000000000000000000000000/orders")
+    assert response.status_code == 404
+
+    app.dependency_overrides = {}
+
+
 def test_get_unique_items_for_customer(account_customer_order):
     account, customer, _ = account_customer_order
     app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)

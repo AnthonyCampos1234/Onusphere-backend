@@ -30,6 +30,40 @@ def get_customer(id: str, current_user: Member = Depends(get_current_user)):
         "email_domain": customer.email_domain,
     }
 
+@router.get("/{id}/orders")
+def get_orders_from_customer(id: str, current_user: Member = Depends(get_current_user)):
+    account = current_user.account
+    customer = Customer.objects(id=id, account=account).first()  # type: ignore
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    orders = Order.objects(customer=customer)  # type: ignore
+
+    def serialize_order(order):
+        return {
+            "id": str(order.pk),
+            "order_batches": [
+                {
+                    "order_batch_id": str(ob.id),
+                    "number_pallets": ob.number_pallets,
+                    "item": {
+                        "item_id": str(ob.item_id.id),
+                        "item_number": ob.item_id.item_number,
+                        "description": ob.item_id.description,
+                        "units_per_pallet": ob.item_id.units_per_pallet
+                    } if ob.item_id else None
+                }
+                for ob in order.order_item_ids
+            ],
+            "order_date": order.order_date.isoformat(),
+            "shipment_times": order.shipment_times,
+            "status": order.status,
+            "loading_instructions": order.loading_instructions or []
+        }
+
+    return [serialize_order(order) for order in orders]
+
+
 @router.get("/{id}/unique-items")
 def get_unique_items_for_customer(id: str, current_user: Member = Depends(get_current_user)):
     account = current_user.account
