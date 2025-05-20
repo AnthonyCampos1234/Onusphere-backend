@@ -23,7 +23,7 @@ def get_customer(id: str, current_user: Member = Depends(get_current_user)):
     customer = Customer.objects(id=id, account=account).first()  # type: ignore
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    
+
     return {
         "id": str(customer.pk),
         "name": customer.name,
@@ -50,7 +50,10 @@ def get_orders_from_customer(id: str, current_user: Member = Depends(get_current
                         "item_id": str(ob.item_id.id),
                         "item_number": ob.item_id.item_number,
                         "description": ob.item_id.description,
-                        "units_per_pallet": ob.item_id.units_per_pallet
+                        "units_per_pallet": ob.item_id.units_per_pallet,
+                        "height": ob.item_id.height,
+                        "width": ob.item_id.width,
+                        "length": ob.item_id.length
                     } if ob.item_id else None
                 }
                 for ob in order.order_item_ids
@@ -71,10 +74,9 @@ def create_customer(customer_data: CreateCustomerRequest, current_user: Member =
         email_domain=customer_data.email_domain,
         account=account
     ).save()
-    
+
     return {
         "id": str(customer.id),
         "name": customer.name,
         "email_domain": customer.email_domain,
     }
-

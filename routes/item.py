@@ -15,10 +15,12 @@ def update_item_dimensions(item_id: str, payload: UpdateDimensionsRequest):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    print(f"Updating item {item_id}: height={payload.height}, width={payload.width}, length={payload.length}")
     item.height = payload.height
     item.width = payload.width
     item.length = payload.length
     item.save()
+    print(f"Saved item {item_id}: height={item.height}, width={item.width}, length={item.length}")
 
     return {
         "item_id": str(item.id),
@@ -27,4 +29,3 @@ def update_item_dimensions(item_id: str, payload: UpdateDimensionsRequest):
         "width": item.width,
         "length": item.length
     }
-

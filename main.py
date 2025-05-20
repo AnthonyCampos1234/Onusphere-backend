@@ -6,7 +6,7 @@ from scripts.listen_gmail import start_gmail_listener_thread
 from pipeline.loader_pipeline import start_truck_loader_thread
 
 # Create FastAPI app
-app = FastAPI(title="Onusphere API", 
+app = FastAPI(title="Onusphere API",
               description="Backend API for Onusphere, including Truck Loading Helper and authentication",
               version="1.0.0")
 
@@ -30,7 +30,7 @@ app.include_router(router)
 def startup_event():
     print("Starting pipeline and Gmail listener...")
     start_truck_loader_thread()
-    # start_gmail_listener_thread()
+    start_gmail_listener_thread()
     print("Background services started.")
 
 # Run with: uvicorn main:app --reload
