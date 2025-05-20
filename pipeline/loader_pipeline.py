@@ -56,7 +56,7 @@ def run_pipline_on_email(email_data):
 
     Order.objects(id=order_id).update_one(set__status="incomplete")
 
-    return None
+    return order_id
 
 
 def run_pipeline_on_state(order_id):
@@ -75,5 +75,6 @@ def run_pipeline_on_state(order_id):
         return order_id
 
     Order.objects(id=order_id).update_one(set__status="incomplete")
-    return None
+
+    return order_id
 
