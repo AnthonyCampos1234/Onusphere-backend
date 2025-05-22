@@ -1,0 +1,236 @@
+{
+  "trucks": [
+    {
+      "dimensions": {
+        "length": 12.0,
+        "width": 8.0,
+        "height": 8.0,
+        "door_width": 8.0,
+        "door_height": 8.0
+      },
+      "loaded_items": [
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 4.0,
+            "width": 3.0,
+            "height": 2.0
+          },
+          "weight": 10.0,
+          "name": "Large Box",
+          "position": [0.0, 0.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        },
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 2.0,
+            "width": 2.0,
+            "height": 2.0
+          },
+          "weight": 5.0,
+          "name": "Cube Box",
+          "position": [4.0, 0.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        },
+        {
+          "type": "cylinder",
+          "diameter": 2.0,
+          "height": 5.0,
+          "weight": 8.0,
+          "name": "Tall Tube",
+          "position": [0.0, 3.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        },
+        {
+          "type": "compound",
+          "items": [
+            {
+              "type": "box",
+              "dimensions": {
+                "length": 4.0,
+                "width": 1.0,
+                "height": 1.0
+              },
+              "weight": 3.0,
+              "name": "L-Base"
+            },
+            {
+              "type": "box",
+              "dimensions": {
+                "length": 1.0,
+                "width": 3.0,
+                "height": 1.0
+              },
+              "weight": 2.0,
+              "name": "L-Side"
+            }
+          ],
+          "relative_positions": [
+            [0.0, 0.0, 0.0],
+            [3.0, 1.0, 0.0]
+          ],
+          "weight": 5.0,
+          "name": "L-Shape",
+          "position": [6.0, 0.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        }
+      ]
+    },
+    {
+      "dimensions": {
+        "length": 10.0,
+        "width": 6.0,
+        "height": 6.0,
+        "door_width": 5.0,
+        "door_height": 5.0
+      },
+      "loaded_items": [
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 3.0,
+            "width": 2.0,
+            "height": 1.5
+          },
+          "weight": 4.0,
+          "name": "Medium Box",
+          "position": [0.0, 0.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        },
+        {
+          "type": "cylinder",
+          "diameter": 1.5,
+          "height": 3.0,
+          "weight": 2.5,
+          "name": "Small Cylinder",
+          "position": [3.0, 0.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        },
+        {
+          "type": "compound",
+          "items": [
+            {
+              "type": "box",
+              "dimensions": {
+                "length": 2.0,
+                "width": 2.0,
+                "height": 1.0
+              },
+              "weight": 2.0,
+              "name": "Base"
+            },
+            {
+              "type": "cylinder",
+              "diameter": 1.0,
+              "height": 2.0,
+              "weight": 1.0,
+              "name": "Top"
+            }
+          ],
+          "relative_positions": [
+            [0.0, 0.0, 0.0],
+            [0.5, 0.5, 1.0]
+          ],
+          "weight": 3.0,
+          "name": "Table-like Object",
+          "position": [5.0, 0.0, 0.0],
+          "rotation": [0.0, 0.0, 0.0]
+        }
+      ]
+    }
+  ],
+  "unplaced_items": [
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 1.0,
+        "width": 1.0,
+        "height": 1.0
+      },
+      "weight": 5.0,
+      "name": "Very small box"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 5.0,
+        "width": 4.0,
+        "height": 3.0
+      },
+      "weight": 15.0,
+      "name": "Extra Large Box"
+    },
+    {
+      "type": "cylinder",
+      "diameter": 3.0,
+      "height": 6.0,
+      "weight": 12.0,
+      "name": "Large Cylinder"
+    },
+    {
+      "type": "compound",
+      "items": [
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 3.0,
+            "width": 3.0,
+            "height": 0.5
+          },
+          "weight": 2.0,
+          "name": "Seat"
+        },
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 0.5,
+            "width": 0.5,
+            "height": 2.0
+          },
+          "weight": 0.5,
+          "name": "Leg 1"
+        },
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 0.5,
+            "width": 0.5,
+            "height": 2.0
+          },
+          "weight": 0.5,
+          "name": "Leg 2"
+        },
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 0.5,
+            "width": 0.5,
+            "height": 2.0
+          },
+          "weight": 0.5,
+          "name": "Leg 3"
+        },
+        {
+          "type": "box",
+          "dimensions": {
+            "length": 0.5,
+            "width": 0.5,
+            "height": 2.0
+          },
+          "weight": 0.5,
+          "name": "Leg 4"
+        }
+      ],
+      "relative_positions": [
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, -2.0],
+        [2.5, 0.0, -2.0],
+        [0.0, 2.5, -2.0],
+        [2.5, 2.5, -2.0]
+      ],
+      "weight": 4.0,
+      "name": "Table"
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "trucks": [
+    {
+      "dimensions": {
+        "length": 631.0,
+        "width": 100.0,
+        "height": 110.0,
+        "door_width": 100.0,
+        "door_height": 110.0
+      },
+      "loaded_items": []
+    },
+    {
+      "dimensions": {
+        "length": 631.0,
+        "width": 100.0,
+        "height": 110.0,
+        "door_width": 100.0,
+        "door_height": 110.0
+      },
+      "loaded_items": []
+    }
+  ],
+  "unplaced_items": [
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 42.0,
+        "width": 48.0,
+        "height": 45.0
+      },
+      "weight": 10.0,
+      "name": "Box 1"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 55.0,
+        "width": 40.0,
+        "height": 50.0
+      },
+      "weight": 12.0,
+      "name": "Box 2"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 45.0,
+        "width": 45.0,
+        "height": 45.0
+      },
+      "weight": 11.0,
+      "name": "Box 3"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 50.0,
+        "width": 52.0,
+        "height": 43.0
+      },
+      "weight": 13.0,
+      "name": "Box 4"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 48.0,
+        "width": 44.0,
+        "height": 55.0
+      },
+      "weight": 12.5,
+      "name": "Box 5"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 53.0,
+        "width": 51.0,
+        "height": 47.0
+      },
+      "weight": 14.0,
+      "name": "Box 6"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 41.0,
+        "width": 43.0,
+        "height": 52.0
+      },
+      "weight": 10.5,
+      "name": "Box 7"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 54.0,
+        "width": 49.0,
+        "height": 42.0
+      },
+      "weight": 13.5,
+      "name": "Box 8"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 47.0,
+        "width": 47.0,
+        "height": 47.0
+      },
+      "weight": 12.0,
+      "name": "Box 9"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 52.0,
+        "width": 46.0,
+        "height": 49.0
+      },
+      "weight": 13.0,
+      "name": "Box 10"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 44.0,
+        "width": 55.0,
+        "height": 51.0
+      },
+      "weight": 12.8,
+      "name": "Box 11"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 49.0,
+        "width": 42.0,
+        "height": 54.0
+      },
+      "weight": 12.2,
+      "name": "Box 12"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 51.0,
+        "width": 50.0,
+        "height": 40.0
+      },
+      "weight": 11.8,
+      "name": "Box 13"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 43.0,
+        "width": 53.0,
+        "height": 44.0
+      },
+      "weight": 11.5,
+      "name": "Box 14"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 55.0,
+        "width": 54.0,
+        "height": 53.0
+      },
+      "weight": 15.0,
+      "name": "Box 15"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 40.0,
+        "width": 41.0,
+        "height": 42.0
+      },
+      "weight": 9.5,
+      "name": "Box 16"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 46.0,
+        "width": 45.0,
+        "height": 46.0
+      },
+      "weight": 11.2,
+      "name": "Box 17"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 50.0,
+        "width": 50.0,
+        "height": 50.0
+      },
+      "weight": 13.0,
+      "name": "Box 18"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 42.0,
+        "width": 52.0,
+        "height": 48.0
+      },
+      "weight": 11.0,
+      "name": "Box 19"
+    },
+    {
+      "type": "box",
+      "dimensions": {
+        "length": 45.0,
+        "width": 51.0,
+        "height": 55.0
+      },
+      "weight": 12.5,
+      "name": "Box 20"
+    }
+  ]
+}

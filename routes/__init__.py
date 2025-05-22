@@ -5,6 +5,7 @@ from .customer import router as customer_router
 from .account import router as account_router
 from .order import router as order_router
 from .item import router as item_router
+from .packing import router as packing_router
 from fastapi import APIRouter
 
 router = APIRouter()
@@ -14,4 +15,5 @@ router.include_router(testing_router, prefix="/testing")
 router.include_router(customer_router, prefix="/customer")
 router.include_router(order_router, prefix="/order")
 router.include_router(item_router, prefix="/item")
+router.include_router(packing_router, prefix="/packing")
 router.include_router(account_router, prefix="")
