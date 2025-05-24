@@ -8,6 +8,8 @@ from .item import router as item_router
 from .packing import router as packing_router
 from .payment import router as payment_router
 from .invitation import router as invitation_router
+from .notification import router as notification_router
+from .security import router as security_router
 from fastapi import APIRouter
 
 router = APIRouter()
@@ -21,3 +23,5 @@ router.include_router(packing_router, prefix="/packing")
 router.include_router(account_router, prefix="")
 router.include_router(payment_router, prefix="/payment")
 router.include_router(invitation_router, prefix="")
+router.include_router(notification_router, prefix="")
+router.include_router(security_router, prefix="")

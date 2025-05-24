@@ -21,6 +21,7 @@ class Member(Document):
     phone = fields.StringField()
     hashed_password = fields.StringField(required=True)
     role = fields.StringField(required=True, choices=("admin", "manager", "member"), default="member")
+    notification_preferences = fields.DictField(default=dict)
 
 
 # ===== Invitation =====
@@ -92,4 +93,43 @@ class Order(Document):
     shipment_times = fields.ListField(fields.StringField(), required=True)
     status = fields.StringField(choices=("incomplete", "processing", "done"))
     loading_instructions = fields.ListField(fields.StringField(), null=True, default=None)
+
+
+class Notification(Document):
+    account = fields.ReferenceField(Account, required=True)
+    member = fields.ReferenceField(Member, required=True)
+    title = fields.StringField(required=True, max_length=200)
+    description = fields.StringField(required=True, max_length=500)
+    type = fields.StringField(required=True, choices=['order', 'customer', 'team', 'system', 'security'])
+    is_read = fields.BooleanField(default=False)
+    created_at = fields.DateTimeField(default=datetime.datetime.utcnow)
+    read_at = fields.DateTimeField()
+    metadata = fields.DictField()  # For storing additional data like order_id, etc.
+
+    meta = {
+        'collection': 'notifications',
+        'indexes': [
+            ('account', 'member', '-created_at'),
+            ('account', 'member', 'is_read'),
+        ]
+    }
+
+
+class UserSession(Document):
+    member = fields.ReferenceField(Member, required=True)
+    session_token = fields.StringField(required=True, unique=True)
+    device_info = fields.StringField(max_length=200)
+    ip_address = fields.StringField()
+    location = fields.StringField()
+    created_at = fields.DateTimeField(default=datetime.datetime.utcnow)
+    last_activity = fields.DateTimeField(default=datetime.datetime.utcnow)
+    is_active = fields.BooleanField(default=True)
+
+    meta = {
+        'collection': 'user_sessions',
+        'indexes': [
+            'session_token',
+            ('member', '-last_activity'),
+        ]
+    }
 
