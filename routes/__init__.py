@@ -6,6 +6,8 @@ from .account import router as account_router
 from .order import router as order_router
 from .item import router as item_router
 from .packing import router as packing_router
+from .payment import router as payment_router
+from .invitation import router as invitation_router
 from fastapi import APIRouter
 
 router = APIRouter()
@@ -17,3 +19,5 @@ router.include_router(order_router, prefix="/order")
 router.include_router(item_router, prefix="/item")
 router.include_router(packing_router, prefix="/packing")
 router.include_router(account_router, prefix="")
+router.include_router(payment_router, prefix="/payment")
+router.include_router(invitation_router, prefix="")

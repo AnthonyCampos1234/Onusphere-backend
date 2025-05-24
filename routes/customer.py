@@ -8,6 +8,9 @@ class CreateCustomerRequest(BaseModel):
     name: str
     email_domain: str
 
+class UpdateCustomerRequest(BaseModel):
+    name: str
+
 router = APIRouter()
 
 @router.get("/")
@@ -98,6 +101,25 @@ def create_customer(customer_data: CreateCustomerRequest, current_user: Member =
         email_domain=customer_data.email_domain,
         account=account
     ).save()
+
+    return {
+        "id": str(customer.id),
+        "name": customer.name,
+        "email_domain": customer.email_domain,
+    }
+
+@router.put("/{id}")
+def update_customer(
+    id: str,
+    customer_data: UpdateCustomerRequest,
+    current_user: Member = Depends(get_current_user)
+):
+    customer = Customer.objects(id=id, account=current_user.account).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    customer.name = customer_data.name
+    customer.save()
 
     return {
         "id": str(customer.id),

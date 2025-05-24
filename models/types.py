@@ -23,6 +23,31 @@ class Member(Document):
     role = fields.StringField(required=True, choices=("admin", "manager", "member"), default="member")
 
 
+# ===== Invitation =====
+class Invitation(Document):
+    date_created = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)
+    account = fields.ReferenceField(Account, required=True)
+    email = fields.EmailField(required=True)
+    role = fields.StringField(required=True, choices=("admin", "manager", "member"), default="member")
+    message = fields.StringField()
+    invitation_token = fields.StringField(required=True, unique=True)
+    expires_at = fields.DateTimeField(required=True)
+    status = fields.StringField(choices=("pending", "accepted", "expired"), default="pending")
+    invited_by = fields.ReferenceField(Member, required=True)
+
+    @staticmethod
+    def generate_token():
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+
+    def save(self, *args, **kwargs):
+        if not self.invitation_token:
+            self.invitation_token = self.generate_token()
+        if not self.expires_at:
+            # Set expiration to 7 days from now
+            self.expires_at = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        return super().save(*args, **kwargs)
+
+
 # ===== Customer =====
 class Customer(Document):
     date_created = fields.DateTimeField(default=datetime.datetime.utcnow, required=True)

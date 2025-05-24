@@ -245,3 +245,44 @@ def test_update_customer_name_not_found(account_and_customers):
 
     app.dependency_overrides = {}
 
+def test_update_customer_put_endpoint(account_and_customers):
+    """Test the new PUT endpoint that matches frontend expectations"""
+    account, customers = account_and_customers
+    customer = customers[0]
+
+    from types import SimpleNamespace
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)
+
+    payload = {"name": "Updated Customer Name via PUT"}
+    response = client.put(
+        f"/customer/{customer.id}",
+        json=payload
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Updated Customer Name via PUT"
+    assert data["id"] == str(customer.id)
+    assert data["email_domain"] == customer.email_domain
+
+    # Confirm it's updated in DB
+    updated = Customer.objects(id=customer.id).first()
+    assert updated.name == "Updated Customer Name via PUT"
+
+    app.dependency_overrides = {}
+
+def test_update_customer_put_not_found(account_and_customers):
+    """Test PUT endpoint with non-existent customer"""
+    account, _ = account_and_customers
+    from types import SimpleNamespace
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(account=account)
+
+    payload = {"name": "New Name"}
+    response = client.put(
+        "/customer/000000000000000000000000",
+        json=payload
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Customer not found"
+
+    app.dependency_overrides = {}
+

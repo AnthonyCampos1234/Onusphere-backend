@@ -13,3 +13,4 @@ pymongo
 motor
 mongoengine
 pdfplumber
+stripe
