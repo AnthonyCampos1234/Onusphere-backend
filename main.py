@@ -6,8 +6,8 @@ from scripts.listen_gmail import start_gmail_listener_thread
 from pipeline.loader_pipeline import start_truck_loader_thread
 
 # Create FastAPI app
-app = FastAPI(title="Onusphere API",
-              description="Backend API for Onusphere, including Truck Loading Helper and authentication",
+app = FastAPI(title="Movomint API",
+description="Backend API for Movomint, including Truck Loading Helper and authentication",
               version="1.0.0")
 
 # Connect to MongoDB database

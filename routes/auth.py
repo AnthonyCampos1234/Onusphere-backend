@@ -63,7 +63,7 @@ def login(payload: Login):
     if not member or not verify_password(payload.password, member.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token({"sub": str(member.id)})
+    token = create_access_token({"sub": str(member.id)}, remember_me=payload.remember_me)
 
     return {"access_token": token, "token_type": "bearer"}
 

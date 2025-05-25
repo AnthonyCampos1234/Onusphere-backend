@@ -51,11 +51,11 @@ The auto-generated invitation emails include:
 ## Example Email Template
 
 ```
-Subject: Invitation to join Acme Corp on OnuSphere
+Subject: Invitation to join Acme Corp on Movomint
 
 Hi there!
 
-John Smith has invited you to join Acme Corp on OnuSphere as a Manager.
+John Smith has invited you to join Acme Corp on Movomint as a Manager.
 
 Personal message: "Welcome to the team! Looking forward to working with you."
 

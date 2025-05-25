@@ -22,6 +22,7 @@ class AddNewMember(BaseModel):
 class Login(BaseModel):
     email: str
     password: str
+    remember_me: Optional[bool] = False
 
 class EmailData(BaseModel):
     csv_file_path: str

@@ -4,8 +4,46 @@ from models.request_bodies import SendInvitation, ResendInvitation, DeleteInvita
 from utils.dependencies import get_current_user
 from typing import List
 import datetime
+import urllib.parse
 
 router = APIRouter()
+
+def create_email_template(invitation, account, current_user):
+    """Create a clean email template for invitations"""
+    
+    # Create a clean, professional email body
+    message_part = f'\n\nPersonal message: "{invitation.message}"\n' if invitation.message else '\n'
+    
+    email_body = f"""Hi there!
+
+{current_user.name} has invited you to join {account.name} on Movomint as a {invitation.role.title()}.{message_part}
+To get started:
+
+1. Click this link to register: http://localhost:3000/auth/register?invitation={invitation.invitation_token}&code={account.company_code}
+
+2. Or manually register using company code: {account.company_code}
+
+This invitation will expire in 7 days.
+
+Best regards,
+{current_user.name}
+
+---
+Movomint Team"""
+
+    subject = f"Invitation to join {account.name} on Movomint"
+    
+    return {
+        "to": invitation.email,
+        "subject": subject,
+        "body": email_body,  # Clean readable version - let frontend handle encoding
+        # Provide components for frontend to build mailto link properly
+        "email_data": {
+            "to": invitation.email,
+            "subject": subject,
+            "body": email_body
+        }
+    }
 
 @router.post("/invitations/send")
 def send_invitation(
@@ -47,6 +85,8 @@ def send_invitation(
     ).save()
     
     # Return invitation data with email template info
+    email_template = create_email_template(invitation, account, current_user)
+    
     return {
         "id": str(invitation.id),
         "email": invitation.email,
@@ -56,24 +96,7 @@ def send_invitation(
         "expires_at": invitation.expires_at.isoformat(),
         "status": invitation.status,
         "invited_by": current_user.name,
-        "email_template": {
-            "to": invitation.email,
-            "subject": f"Invitation to join {account.name} on OnuSphere",
-            "body": f"""Hi there!
-
-{current_user.name} has invited you to join {account.name} on OnuSphere as a {invitation.role.title()}.
-
-{f'Personal message: "{invitation.message}"' if invitation.message else ''}
-
-To get started:
-1. Click this link: http://localhost:3000/auth/register?invitation={invitation.invitation_token}&code={account.company_code}
-2. Create your account using company code: {account.company_code}
-
-This invitation will expire in 7 days.
-
-Best regards,
-{current_user.name}"""
-        }
+        "email_template": email_template
     }
 
 @router.get("/invitations")
@@ -128,6 +151,8 @@ def resend_invitation(
     # Get account details
     account = Account.objects(id=current_user.account.id).first()
     
+    email_template = create_email_template(invitation, account, current_user)
+    
     return {
         "id": str(invitation.id),
         "email": invitation.email,
@@ -137,24 +162,7 @@ def resend_invitation(
         "expires_at": invitation.expires_at.isoformat(),
         "status": invitation.status,
         "invited_by": invitation.invited_by.name if invitation.invited_by else "Unknown",
-        "email_template": {
-            "to": invitation.email,
-            "subject": f"Invitation to join {account.name} on OnuSphere",
-            "body": f"""Hi there!
-
-{current_user.name} has invited you to join {account.name} on OnuSphere as a {invitation.role.title()}.
-
-{f'Personal message: "{invitation.message}"' if invitation.message else ''}
-
-To get started:
-1. Click this link: http://localhost:3000/auth/register?invitation={invitation.invitation_token}&code={account.company_code}
-2. Create your account using company code: {account.company_code}
-
-This invitation will expire in 7 days.
-
-Best regards,
-{current_user.name}"""
-        }
+        "email_template": email_template
     }
 
 @router.delete("/invitations/{invitation_id}")
